@@ -1,0 +1,190 @@
+#-*- mode: makefile;-*-
+
+###   make.rules file for c/c++ projects
+
+
+###   Usage: set cpp_sources to the c/c++ sourece files
+###   and then set out_executable  = a.out if target is an execute file
+###   or set out_library = libfoo.so or out_library=libfoo.a if target is a out_library
+###   For example:
+###   -------------- makefile ---------------------
+###   cpp_sources  = a.c b.cpp
+###   out_executable   = foo.bin
+###   include make.rules
+###  -----------------------------------------------
+###
+###   include_dirs : set head files include path ( -I )
+###    Example:  include_dirs = /home/myinclude /home/foo
+###   link_dirs    : set link path ( -L )
+###    Example:  link_dirs = /home/usr/libs /home/devel/libs
+
+###   link_libs    : set link out_library ( -l )
+###    Example:  link_libs = m pthread
+
+###   debug  : set debug flags ( -g or -O2 )
+###   quiet : 0 or 1  display detail compiling info
+
+
+.PHONY : build clean strip
+
+
+CROSS_PREFIX=
+
+# set the default build directory
+BUILD_DIR ?= objects
+
+
+MKDIR ?= mkdir -p
+RMDIR ?= rmdir -p
+AR     = ar rcs
+
+CPPFLAGS += $(include_dirs:%=-I%)
+
+
+debug  ?= 1
+quiet ?= 0
+
+
+CXX = $(CROSS_PREFIX)g++
+CC  = $(CROSS_PREFIX)gcc
+STRIP = $(CROSS_PREFIX)strip
+
+CXXFLAGS += -Wall -pipe 
+CFLAGS   += -Wall -pipe
+
+# build shared lib
+ifneq ($(out_library),)
+	CXXFLAGS += -fPIC
+	CFLAGS   += -fPIC
+endif
+
+LDFLAGS  += -rdynamic
+LDFLAGS  += $(link_dirs:%=-L%)
+LDFLAGS  += $(link_libs:%=-l%)
+
+
+ifneq ($(out_library),)
+	LDFLAGS += -shared
+endif
+
+ifeq ($(debug),1)
+	CXXFLAGS += -g
+        CFLAGS   += -g
+	CPPFLAGS += -D_DEBUG
+else
+	CXXFLAGS += -g
+        CFLAGS   += -g
+	CFLAGS   += -O2
+	CXXFLAGS += -O2
+	CPPFLAGS += -DNDEBUG
+endif
+
+CPPFLAGS += -D_REENTRANT=1
+
+ifeq ($(quiet),1)
+	SILENT = @
+else
+	SILENT =
+endif
+
+SRCS_NOEXT := $(addprefix $(BUILD_DIR)/, $(notdir $(basename $(cpp_sources))))
+OBJS := $(addsuffix .o, $(SRCS_NOEXT))
+
+vpath %.cpp $(dir $(cpp_sources))
+vpath %.c   $(dir $(cpp_sources))
+
+ifneq (,$(findstring .cpp, $(cpp_sources)))
+	LINKER = $(CXX)
+else
+	LINKER = $(CC)
+endif
+
+CXX_DEPEND = $(CXX) -MM $(CPPFLAGS) $(include_dirs:%=-I%)
+CC_DEPEND  = $(CC)  -MM $(CPPFLAGS) $(include_dirs:%=-I%)
+
+DEPS := $(OBJS:.o=.d)
+
+
+# default target
+build: $(BUILD_DIR)/folder.exist $(OBJS) $(out_executable) $(out_library)
+	@echo Build $(out_executable) $(out_library) Finished.
+
+$(BUILD_DIR)/folder.exist :
+	@echo Create $(BUILD_DIR) folder ...
+	@$(MKDIR) $(BUILD_DIR) > /dev/null 2>&1 || :
+	@touch $@
+
+# Delete the default suffixes
+.SUFFIXES:
+
+
+$(BUILD_DIR)/%.o: %.cpp
+	@echo Compile $<
+	$(SILENT) $(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+
+$(BUILD_DIR)/%.o: %.c
+	@echo Compile $<
+	$(SILENT) $(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+$(BUILD_DIR)/%.d : %.cpp
+#	@echo Generating $< dependence ...
+	@$(CXX_DEPEND) $< | sed '1s,^,$@ $(BUILD_DIR)/,' > $@
+
+$(BUILD_DIR)/%.d : %.c
+#	@echo Generating $< dependence ...
+	@$(CC_DEPEND) $< | sed '1s,^,$@ $(BUILD_DIR)/,' > $@
+
+ifneq ($(out_executable),)
+$(out_executable): $(PREREQ) $(OBJS)
+	$(PRE_LINK_COMMAND)
+	@echo Linking program $(out_executable)...
+	@$(MKDIR) $(dir $@) > /dev/null 2>&1 || :
+	$(SILENT) $(LINKER) -o $@ $(OBJS) $(LDFLAGS) $(STATIC_LIBS)
+	$(POST_BUILD_COMMAND)
+endif
+
+ifneq ($(out_library),)
+$(out_library): $(PREREQ) $(OBJS)
+	$(PRE_LINK_COMMAND)
+	@echo Linking out_library $(out_library)...
+	@$(MKDIR) $(dir $@) > /dev/null 2>&1 || :
+ifeq ($(suffix $(out_library)), .a)
+	@echo $(AR) $@ $(OBJS) $(STATIC_LIBS)
+	$(SILENT) $(AR) $@ $(OBJS) $(STATIC_LIBS)
+else
+	@echo $(LINKER) -o $@ $(OBJS) $(LDFLAGS) $(STATIC_LIBS)
+	$(SILENT) $(LINKER) -o $@ $(OBJS) $(LDFLAGS) $(STATIC_LIBS)
+endif
+	$(POST_BUILD_COMMAND)
+
+endif
+
+clean::
+	@echo clean  $(out_executable) $(out_library)...
+	$(SILENT)-$(RM) $(OBJS)
+	$(SILENT)-$(RM) $(DEPS)
+ifneq ($(out_executable),)
+	$(SILENT)-$(RM) $(out_executable)
+endif
+ifneq ($(out_library),)
+	$(SILENT)-$(RM) $(out_library)
+endif
+	$(SILENT)-$(RM) $(BUILD_DIR)/folder.exist
+	$(SILENT)-$(RMDIR) $(BUILD_DIR) 2>/dev/null || :
+
+
+strip:: build
+	$(STRIP) $(out_executable) $(out_library)
+
+
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(DEPS),)
+-include $(BUILD_DIR)/folder.exist
+-include $(DEPS)
+-include $(BUILD_DIR)/folder.exist
+endif
+endif
+
+
+
