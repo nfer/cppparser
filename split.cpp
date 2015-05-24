@@ -22,6 +22,8 @@ void analysis(const char * data, WORD_Vector & wordVector)
     int wordlen = 0;
     int lastType = TYPE_SPACE;
     bool isLineComment = false;
+    bool isEscapeChar = false;
+    bool isStringMode = false;
 
 #define PRINT_LAST_TYPE() \
     if (wordlen > 0) { \
@@ -36,10 +38,20 @@ void analysis(const char * data, WORD_Vector & wordVector)
         lastType = type; \
     }
 
+#define CHECK_ESCAPE_CHAR() \
+    if (isEscapeChar){ \
+        isEscapeChar = false; \
+        word[wordlen++] = c; \
+        PRINT_LAST_TYPE(); \
+        continue; \
+    }
+
     for (int i=0; i<len; i++){
         char c = data[i];
         if (isLineComment || isalnum(c) || c == '_'){
             CHECK_LAST_TYPE(TYPE_WORD);
+
+            CHECK_ESCAPE_CHAR();
 
             if (isLineComment && c == '/')
                 continue;
@@ -52,6 +64,9 @@ void analysis(const char * data, WORD_Vector & wordVector)
         }
         else{
             CHECK_LAST_TYPE(TYPE_SPECIAL);
+
+            CHECK_ESCAPE_CHAR();
+
             switch(c){
                 case '(':
                 case ')':
@@ -60,7 +75,13 @@ void analysis(const char * data, WORD_Vector & wordVector)
                 case '{':
                 case '}':
                 case '\'':
+                    PRINT_LAST_TYPE();
+                    word[wordlen++] = c;
+                    PRINT_LAST_TYPE();
+                    break;
+
                 case '\"':
+                    isStringMode = !isStringMode;
                     PRINT_LAST_TYPE();
                     word[wordlen++] = c;
                     PRINT_LAST_TYPE();
@@ -76,6 +97,12 @@ void analysis(const char * data, WORD_Vector & wordVector)
                     break;
 
                 case '\\':
+                    PRINT_LAST_TYPE();
+                    word[wordlen++] = c;
+                    if (isStringMode)
+                        isEscapeChar = true;
+                    break;
+
                 case ',':
                 case ';':
                     PRINT_LAST_TYPE();
