@@ -41,7 +41,7 @@ AR     = ar rcs
 CPPFLAGS += $(include_dirs:%=-I%)
 
 
-debug  ?= 1
+debug ?= 0
 quiet ?= 0
 
 
@@ -69,11 +69,11 @@ endif
 
 ifeq ($(debug),1)
 	CXXFLAGS += -g
-        CFLAGS   += -g
+	CFLAGS   += -g
 	CPPFLAGS += -D_DEBUG
 else
 	CXXFLAGS += -g
-        CFLAGS   += -g
+	CFLAGS   += -g
 	CFLAGS   += -O2
 	CXXFLAGS += -O2
 	CPPFLAGS += -DNDEBUG
@@ -185,6 +185,3 @@ ifneq ($(DEPS),)
 -include $(BUILD_DIR)/folder.exist
 endif
 endif
-
-
-

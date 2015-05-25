@@ -7,8 +7,6 @@
 
 using namespace std;
 
-#define DEBUG
-
 enum Meta_Type{
     TYPE_SPACE,
     TYPE_WORD,
@@ -32,7 +30,7 @@ typedef vector<Meta_Data> Meta_Vector;
 
 void analysis(const char * data, int datalen, int line, Meta_Vector & wordVector)
 {
-#ifdef DEBUG
+#ifdef _DEBUG
     if (data[0] == '\r' || data[0] == '\n')
         cout << "[" << line << "] a blank line." << endl;
     else
@@ -195,7 +193,7 @@ int main(int argc, char * argv[])
         }
 
         analysis(lineData, read, lineNum, wordVector);
-#ifdef DEBUG
+#ifdef _DEBUG
         dumpWordVector(lineData, wordVector);
         freeWordVector(wordVector);
         getchar();

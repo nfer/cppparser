@@ -6,8 +6,8 @@ DIR_CUR		= ./
 SRC_CUR		= $(wildcard $(DIR_CUR)/*.cpp)
 
 ### set variables before include make.rules
-debug ?= 1
-quiet ?= 1
+# debug ?= 1
+# quiet ?= 1
 
 out_executable  = cppparser
 include_dirs    = $(DIR_CUR)
