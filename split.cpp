@@ -7,6 +7,8 @@
 
 using namespace std;
 
+#define DEBUG
+
 enum ANALYSIS_TYPE{
     TYPE_SPACE,
     TYPE_WORD,
@@ -17,10 +19,12 @@ typedef vector< pair<char *,int> > WORD_Vector;
 
 void analysis(const char * data, int datalen, int line, WORD_Vector & wordVector)
 {
+#ifdef DEBUG
     if (data[0] == '\r' || data[0] == '\n')
         cout << "[" << line << "] a blank line." << endl;
     else
         cout << "[" << line << "] data:" << data << endl;
+#endif
 
     int len = strlen(data);
     char word[256] = {'\0'};
@@ -177,13 +181,19 @@ int main(int argc, char * argv[])
         }
 
         analysis(lineData, read, lineNum, wordVector);
+#ifdef DEBUG
         dumpWordVector(lineData, wordVector);
         freeWordVector(wordVector);
         getchar();
+#endif
     }
 
     if (lineData)
         free(lineData);
+
+    // dump
+    dumpWordVector(lineData, wordVector);
+    freeWordVector(wordVector);
 
     fclose(fp);
     return 0;
