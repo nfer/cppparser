@@ -15,8 +15,13 @@ enum ANALYSIS_TYPE{
 
 typedef vector< pair<char *,int> > WORD_Vector;
 
-void analysis(const char * data, WORD_Vector & wordVector)
+void analysis(const char * data, int datalen, int line, WORD_Vector & wordVector)
 {
+    if (data[0] == '\r' || data[0] == '\n')
+        cout << "[" << line << "] a blank line." << endl;
+    else
+        cout << "[" << line << "] data:" << data << endl;
+
     int len = strlen(data);
     char word[256] = {'\0'};
     int wordlen = 0;
@@ -121,7 +126,6 @@ void analysis(const char * data, WORD_Vector & wordVector)
 
 void dumpWordVector(const char * str, WORD_Vector & wordVector)
 {
-    cout << "str(len:" << strlen(str) << "):" << str << endl;
     // dump wordVector
     for(size_t i=0; i<wordVector.size(); i++)
     {
@@ -149,13 +153,13 @@ int main(int argc, char * argv[])
     // const char * str = "    a /= 3; ////// must be 0";
     // const char * str = "typedef vector< pair<char *,int> > WORD_Vector;";
 
-    char * line = NULL;
-    size_t len = 0;
+    char * lineData = NULL;
+    size_t lineLen = 0;
     ssize_t read;
 
-    int lineStart = -1, lineIdx = 0;
+    int lineOffset = -1, lineNum = 0;
     if (argc > 2){
-        lineStart = atoi(argv[2]);
+        lineOffset = atoi(argv[2]);
     }
 
     FILE * fp = fopen(argv[1], "r");
@@ -165,21 +169,21 @@ int main(int argc, char * argv[])
         return -1;
     }
 
-    while ((read = getline(&line, &len, fp)) != -1)
+    while ((read = getline(&lineData, &lineLen, fp)) != -1)
     {
-        lineIdx++;
-        if (lineIdx < lineStart)
+        lineNum++;
+        if (lineNum < lineOffset){
             continue;
+        }
 
-        printf("line %d\t", lineIdx);
-        analysis(line, wordVector);
-        dumpWordVector(line, wordVector);
+        analysis(lineData, read, lineNum, wordVector);
+        dumpWordVector(lineData, wordVector);
         freeWordVector(wordVector);
         getchar();
     }
 
-    if (line)
-        free(line);
+    if (lineData)
+        free(lineData);
 
     fclose(fp);
     return 0;
