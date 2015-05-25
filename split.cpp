@@ -9,15 +9,28 @@ using namespace std;
 
 #define DEBUG
 
-enum ANALYSIS_TYPE{
+enum Meta_Type{
     TYPE_SPACE,
     TYPE_WORD,
     TYPE_SPECIAL,
 };
 
-typedef vector< pair<char *,int> > WORD_Vector;
+struct Meta_Data{
+    Meta_Data(char * _data, int _type, int _line, int _pos){
+        data = _data;
+        type = _type;
+        line = _line;
+        pos  = _pos;
+    }
+    char * data;
+    int    type;
+    int    line;
+    int    pos;
+};
 
-void analysis(const char * data, int datalen, int line, WORD_Vector & wordVector)
+typedef vector<Meta_Data> Meta_Vector;
+
+void analysis(const char * data, int datalen, int line, Meta_Vector & wordVector)
 {
 #ifdef DEBUG
     if (data[0] == '\r' || data[0] == '\n')
@@ -36,7 +49,7 @@ void analysis(const char * data, int datalen, int line, WORD_Vector & wordVector
 
 #define PRINT_LAST_TYPE() \
     if (wordlen > 0) { \
-        wordVector.push_back(make_pair(strdup(word), lastType)); \
+        wordVector.push_back(Meta_Data(strdup(word), lastType, line, i-wordlen)); \
         memset(word, 0x00, sizeof(word)); \
         wordlen = 0; \
     } \
@@ -55,7 +68,8 @@ void analysis(const char * data, int datalen, int line, WORD_Vector & wordVector
         continue; \
     }
 
-    for (int i=0; i<len; i++){
+    int i;
+    for (i = 0; i < len; i++){
         char c = data[i];
         if (isLineComment || isalnum(c) || c == '_'){
             CHECK_LAST_TYPE(TYPE_WORD);
@@ -86,14 +100,12 @@ void analysis(const char * data, int datalen, int line, WORD_Vector & wordVector
                 case '\'':
                     PRINT_LAST_TYPE();
                     word[wordlen++] = c;
-                    PRINT_LAST_TYPE();
                     break;
 
                 case '\"':
-                    isStringMode = !isStringMode;
                     PRINT_LAST_TYPE();
                     word[wordlen++] = c;
-                    PRINT_LAST_TYPE();
+                    isStringMode = !isStringMode;
                     break;
 
                 case '/':
@@ -114,6 +126,7 @@ void analysis(const char * data, int datalen, int line, WORD_Vector & wordVector
 
                 case ',':
                 case ';':
+                case ':':
                     PRINT_LAST_TYPE();
                     word[wordlen++] = c;
                     break;
@@ -128,34 +141,35 @@ void analysis(const char * data, int datalen, int line, WORD_Vector & wordVector
     CHECK_LAST_TYPE(TYPE_SPACE);
 }
 
-void dumpWordVector(const char * str, WORD_Vector & wordVector)
+void dumpWordVector(const char * str, Meta_Vector & wordVector)
 {
     // dump wordVector
     for(size_t i=0; i<wordVector.size(); i++)
     {
-        cout << "type :" << wordVector[i].second << "\tword : " << wordVector[i].first << endl;
+        printf("[%3d:%2d] type %d, word:%s\n", wordVector[i].line, wordVector[i].pos,
+            wordVector[i].type, wordVector[i].data);
     }
 }
 
-void freeWordVector(WORD_Vector & wordVector)
+void freeWordVector(Meta_Vector & wordVector)
 {
     // free wordVector data
     for(size_t i=0; i<wordVector.size(); i++)
     {
-        free(wordVector[i].first);
+        free(wordVector[i].data);
     }
     wordVector.clear();
 }
 
 int main(int argc, char * argv[])
 {
-    WORD_Vector wordVector;
+    Meta_Vector wordVector;
     wordVector.clear();
     // const char * str = "        if ( (parser->flags & SKIP_SP) && (*c == ' ' || *c == '\\t'))";
     // const char * str = "    HTTP_TOKEN1 = 0,// must be 0";
     // const char * str = "    a /= 3; // must be 0";
     // const char * str = "    a /= 3; ////// must be 0";
-    // const char * str = "typedef vector< pair<char *,int> > WORD_Vector;";
+    // const char * str = "typedef vector< pair<char *,int> > Meta_Vector;";
 
     char * lineData = NULL;
     size_t lineLen = 0;
