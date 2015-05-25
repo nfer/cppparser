@@ -69,13 +69,10 @@ void analysis(const char * data, int datalen, int line, Meta_Vector & wordVector
     int i;
     for (i = 0; i < len; i++){
         char c = data[i];
-        if (isLineComment || isalnum(c) || c == '_'){
+        if (isalnum(c) || c == '_'){
             CHECK_LAST_TYPE(TYPE_WORD);
 
             CHECK_ESCAPE_CHAR();
-
-            if (isLineComment && c == '/')
-                continue;
 
             word[wordlen++] = c;
         }
@@ -96,6 +93,9 @@ void analysis(const char * data, int datalen, int line, Meta_Vector & wordVector
                 case '{':
                 case '}':
                 case '\'':
+                case ',':
+                case ';':
+                case ':':
                     PRINT_LAST_TYPE();
                     word[wordlen++] = c;
                     break;
@@ -107,12 +107,17 @@ void analysis(const char * data, int datalen, int line, Meta_Vector & wordVector
                     break;
 
                 case '/':
-                    if (wordlen > 0 && word[wordlen - 1] == '/')
-                        isLineComment = true;
-                    else
+                    if (wordlen > 0 && word[wordlen - 1] == '/'){
+                        word[wordlen++] = c;
+                        if ( !isLineComment ){
+                            isLineComment = true;
+                            PRINT_LAST_TYPE();
+                        }
+                    }
+                    else{
                         PRINT_LAST_TYPE();
-
-                    word[wordlen++] = c;
+                        word[wordlen++] = c;
+                    }
                     break;
 
                 case '\\':
@@ -120,13 +125,6 @@ void analysis(const char * data, int datalen, int line, Meta_Vector & wordVector
                     word[wordlen++] = c;
                     if (isStringMode)
                         isEscapeChar = true;
-                    break;
-
-                case ',':
-                case ';':
-                case ':':
-                    PRINT_LAST_TYPE();
-                    word[wordlen++] = c;
                     break;
 
                 default:
