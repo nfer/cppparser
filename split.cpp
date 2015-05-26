@@ -96,6 +96,9 @@ void analysis(const char * data, int datalen, int line, Meta_Vector & wordVector
                 case ',':
                 case ';':
                 case ':':
+                case '*':
+                case '&':
+                case '!':
                     PRINT_LAST_TYPE();
                     word[wordlen++] = c;
                     break;
