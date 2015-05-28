@@ -81,11 +81,17 @@ void analysis(Meta_Vector & wordVector)
                 else if (strcmp(wordVector[i+1].data, "define") == 0) {
                     printf("Line %d is a macro define.\n", wordVector[i].line);
                 }
+                else if (strcmp(wordVector[i+1].data, "if") == 0) {
+                    printf("Line %d is a if compile condition.\n", wordVector[i].line);
+                }
                 else if (strcmp(wordVector[i+1].data, "ifdef") == 0) {
                     printf("Line %d is a ifdef compile condition.\n", wordVector[i].line);
                 }
                 else if (strcmp(wordVector[i+1].data, "ifndef") == 0) {
                     printf("Line %d is a ifndef compile condition.\n", wordVector[i].line);
+                }
+                else if (strcmp(wordVector[i+1].data, "else") == 0) {
+                    printf("Line %d is a else compile condition.\n", wordVector[i].line);
                 }
                 else if (strcmp(wordVector[i+1].data, "endif") == 0) {
                     printf("Line %d is a endif compile condition.\n", wordVector[i].line);
