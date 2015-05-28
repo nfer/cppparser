@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "split.h"
+#include "analysis.h"
 
 using namespace std;
 
@@ -61,7 +62,7 @@ int main(int argc, char * argv[])
             continue;
         }
 
-        analysis(lineData, read, lineNum, wordVector);
+        split(lineData, read, lineNum, wordVector);
 #ifdef _DEBUG
         dumpWordVector(lineData, wordVector);
         freeWordVector(wordVector);
@@ -73,7 +74,10 @@ int main(int argc, char * argv[])
         free(lineData);
 
     // dump
-    dumpWordVector(lineData, wordVector);
+    // dumpWordVector(lineData, wordVector);
+
+    analysis(wordVector);
+
     freeWordVector(wordVector);
 
     fclose(fp);

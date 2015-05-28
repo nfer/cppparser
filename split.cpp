@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void analysis(const char * data, int datalen, int line, Meta_Vector & wordVector)
+void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
 {
 #ifdef _DEBUG
     if (data[0] == '\r' || data[0] == '\n')

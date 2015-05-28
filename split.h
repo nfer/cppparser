@@ -26,6 +26,6 @@ struct Meta_Data{
 
 typedef vector<Meta_Data> Meta_Vector;
 
-void analysis(const char * data, int datalen, int line, Meta_Vector & wordVector);
+void split(const char * data, int datalen, int line, Meta_Vector & wordVector);
 
 #endif // _SPLIT_H_
