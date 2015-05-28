@@ -61,33 +61,45 @@ void getIncludeFiles(Meta_Vector & wordVector, size_t index)
 
 void analysis(Meta_Vector & wordVector)
 {
+    int curLine = 0;
     bool newLineFlag = true;
     size_t vectorSize = wordVector.size();
 
     for(size_t i=0; i < vectorSize; i++)
     {
-        if (newLineFlag && wordVector[i].data[0] == '#' && i < vectorSize-1)
+        if (curLine == wordVector[i].line)
+            newLineFlag = false;
+        else
+            newLineFlag = true;
+
+        if (newLineFlag)
         {
-            if (strcmp(wordVector[i+1].data, "include") == 0) {
-                getIncludeFiles(wordVector, i);
+            if (wordVector[i].data[0] == '#' && i < vectorSize-1){
+                if (strcmp(wordVector[i+1].data, "include") == 0) {
+                    getIncludeFiles(wordVector, i);
+                }
+                else if (strcmp(wordVector[i+1].data, "define") == 0) {
+                    printf("Line %d is a macro define.\n", wordVector[i].line);
+                }
+                else if (strcmp(wordVector[i+1].data, "ifdef") == 0) {
+                    printf("Line %d is a ifdef compile condition.\n", wordVector[i].line);
+                }
+                else if (strcmp(wordVector[i+1].data, "ifndef") == 0) {
+                    printf("Line %d is a ifndef compile condition.\n", wordVector[i].line);
+                }
+                else if (strcmp(wordVector[i+1].data, "endif") == 0) {
+                    printf("Line %d is a endif compile condition.\n", wordVector[i].line);
+                }
+                else {
+                    printf("Line %d is not support now.\n", wordVector[i].line);
+                }
             }
-            else if (strcmp(wordVector[i+1].data, "define") == 0) {
-                printf("Line %d is a macro define.\n", wordVector[i].line);
-            }
-            else if (strcmp(wordVector[i+1].data, "ifdef") == 0) {
-                printf("Line %d is a ifdef compile condition.\n", wordVector[i].line);
-            }
-            else if (strcmp(wordVector[i+1].data, "ifndef") == 0) {
-                printf("Line %d is a ifndef compile condition.\n", wordVector[i].line);
-            }
-            else if (strcmp(wordVector[i+1].data, "endif") == 0) {
-                printf("Line %d is a endif compile condition.\n", wordVector[i].line);
-            }
-            else {
-                printf("Line %d is not support now.\n", wordVector[i].line);
-            }
+
+            newLineFlag = false;
+            curLine = wordVector[i].line;
         }
-            // printf("[%3d:%2d] type %d, word:%s\n", wordVector[i].line, wordVector[i].pos,
-            //     wordVector[i].type, wordVector[i].data);
+        else{
+            continue;
+        }
     }
 }
