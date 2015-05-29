@@ -59,6 +59,59 @@ void getIncludeFiles(Meta_Vector & wordVector, size_t index)
     }
 }
 
+void getDefine(Meta_Vector & wordVector, size_t index)
+{
+    int curLine = wordVector[index].line;
+    int defineType = TYPE_CONSTANT;
+    char defineStr[256] = {'\0'};
+
+    // #define A a or just #define A
+    if (index + 2 >= wordVector.size() || wordVector[index+2].line != curLine){
+        printf("not a full define statement [%d, %d].\n", (int)index, (int)wordVector.size());
+        return ;
+    }
+
+    if (wordVector[index+3].line != curLine) {
+        if (wordVector[index+2].type == TYPE_WORD){
+            printf("Line %d is a NULL constant define: %s\n", curLine, wordVector[index+2].data);
+            return ;
+        }
+        else
+            printf("not a valid header include statement [%s].\n", wordVector[index+2].data);
+    }
+    else{
+        if (wordVector[index+2].data[0] == '('){
+            defineType = TYPE_FUNCTION;
+        }
+        else if (wordVector[index+2].type == TYPE_WORD){
+            defineType = TYPE_CONSTANT;
+        }
+        else{
+            printf("not a valid header include statement [%s].\n", wordVector[index+2].data);
+            return;
+        }
+    }
+
+    if (defineType == TYPE_CONSTANT){
+        // skip '#' and "define" and constant define
+        for(size_t i=index+3; i < wordVector.size(); i++)
+        {
+            if (wordVector[i].line != wordVector[index].line)
+                break;
+
+            if (strcmp(wordVector[i].data, "//") == 0){
+                printf("comment occurs at pos %d\n", wordVector[i].pos);
+                break;
+            }
+
+            strcat(defineStr, wordVector[i].data);
+        }
+
+        printf("Line %d is a constant define: %s, value is %s\n", curLine,
+            wordVector[index+2].data, defineStr);
+    }
+}
+
 void analysis(Meta_Vector & wordVector)
 {
     int curLine = 0;
@@ -79,7 +132,7 @@ void analysis(Meta_Vector & wordVector)
                     getIncludeFiles(wordVector, i);
                 }
                 else if (strcmp(wordVector[i+1].data, "define") == 0) {
-                    printf("Line %d is a macro define.\n", wordVector[i].line);
+                    getDefine(wordVector, i);
                 }
                 else if (strcmp(wordVector[i+1].data, "if") == 0) {
                     printf("Line %d is a if compile condition.\n", wordVector[i].line);

@@ -9,7 +9,13 @@ enum Header_Type{
     TYPE_USER,
 };
 
+enum Define_Type{
+    TYPE_CONSTANT,
+    TYPE_FUNCTION,
+};
+
 void getIncludeFiles(Meta_Vector & wordVector, size_t index);
+void getDefine(Meta_Vector & wordVector, size_t index);
 
 void analysis(Meta_Vector & wordVector);
 
