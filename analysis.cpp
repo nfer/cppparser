@@ -113,6 +113,7 @@ void getDefine(Meta_Vector & wordVector, size_t index)
             // FIXME: should save space string on wordVector
             if (lastPos != wordVector[i].pos) {
                 memset(defineStr + defineStrLen, 0x20, wordVector[i].pos - lastPos);
+                defineStrLen += wordVector[i].pos - lastPos;
             }
 
             strcat(defineStr, wordVector[i].data);
@@ -123,8 +124,8 @@ void getDefine(Meta_Vector & wordVector, size_t index)
             defineStrLen += dataLen;
         }
 
-        printf("Line %d is a constant define: %s, value is %s\n", curLine,
-            wordVector[index+2].data, defineStr);
+        printf("Line %d is a constant define: %s, value is %s, len is %d\n", curLine,
+            wordVector[index+2].data, defineStr, defineStrLen);
     }
 }
 
