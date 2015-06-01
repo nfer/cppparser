@@ -20,7 +20,6 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
     char word[256] = {'\0'};
     int wordlen = 0;
     int lastType = TYPE_SPACE;
-    bool isLineComment = false;
     bool isEscapeChar = false;
     bool isStringMode = false;
 
@@ -91,17 +90,11 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
                     break;
 
                 case '/':
-                    if (wordlen > 0 && word[wordlen - 1] == '/'){
-                        word[wordlen++] = c;
-                        if ( !isLineComment ){
-                            isLineComment = true;
-                            PRINT_LAST_TYPE();
-                        }
-                    }
-                    else{
+                    if (wordlen == 0){
                         PRINT_LAST_TYPE();
-                        word[wordlen++] = c;
                     }
+
+                    word[wordlen++] = c;
                     break;
 
                 case '\\':

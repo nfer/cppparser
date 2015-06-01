@@ -34,7 +34,7 @@ void getIncludeFiles(Meta_Vector & wordVector, size_t index)
     	if (wordVector[i].line != wordVector[index].line)
     		break;
 
-    	if (strcmp(wordVector[i].data, "//") == 0){
+    	if (strncmp(wordVector[i].data, "//", 2) == 0){
     		printf("comment occurs at pos %d\n", wordVector[i].pos);
     		break;
     	}
@@ -102,7 +102,7 @@ void getDefine(Meta_Vector & wordVector, size_t index)
             if (wordVector[i].line != wordVector[index].line)
                 break;
 
-            if (strcmp(wordVector[i].data, "//") == 0){
+            if (strncmp(wordVector[i].data, "//", 2) == 0){
                 printf("comment occurs at pos %d\n", wordVector[i].pos);
                 break;
             }
