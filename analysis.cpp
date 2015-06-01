@@ -12,24 +12,24 @@ void getIncludeFiles(Meta_Vector & wordVector, size_t index)
 	char headerStr[256] = {'\0'};
 
 	// #include <string.h> or #include <vector>
-	if (index + 4 >= wordVector.size() || wordVector[index+4].line != curLine){
+	if (index + 5 >= wordVector.size() || wordVector[index+5].line != curLine){
 		printf("not a full header include statement [%d, %d].\n", (int)index, (int)wordVector.size());
 		return ;
 	}
 
-	if (wordVector[index+2].data[0] == '\"'){
+	if (wordVector[index+3].data[0] == '\"'){
 		headerType = TYPE_USER;
 	}
-	else if (wordVector[index+2].data[0] == '<'){
+	else if (wordVector[index+3].data[0] == '<'){
 		headerType = TYPE_SYSTEM;
 	}
 	else{
-		printf("not a valid header include statement [%s].\n", wordVector[index+2].data);
+		printf("not a valid header include statement [%s].\n", wordVector[index+3].data);
 		return;
 	}
 
-	// skip '#' and "include" and header type char '"' or '<'
-    for(size_t i=index+3; i < wordVector.size(); i++)
+	// skip '#', "include", space and header type char '"' or '<'
+    for(size_t i=index+4; i < wordVector.size(); i++)
     {
     	if (wordVector[i].line != wordVector[index].line)
     		break;
@@ -66,37 +66,38 @@ void getDefine(Meta_Vector & wordVector, size_t index)
     char defineStr[256] = {'\0'};
 
     // #define A a or just #define A
-    if (index + 2 >= wordVector.size() || wordVector[index+2].line != curLine){
+    if (index + 3 >= wordVector.size() || wordVector[index+3].line != curLine){
         printf("not a full define statement [%d, %d].\n", (int)index, (int)wordVector.size());
         return ;
     }
 
-    if (wordVector[index+3].line != curLine) {
-        if (wordVector[index+2].type == TYPE_WORD){
-            printf("Line %d is a NULL constant define: %s\n", curLine, wordVector[index+2].data);
+    if (wordVector[index+4].line != curLine) {
+        if (wordVector[index+3].type == TYPE_WORD){
+            printf("Line %d is a NULL constant define: %s\n", curLine, wordVector[index+3].data);
             return ;
         }
         else
-            printf("not a valid header include statement [%s].\n", wordVector[index+2].data);
+            printf("not a valid define statement [%s].\n", wordVector[index+2].data);
     }
     else{
-        if (wordVector[index+2].data[0] == '('){
+        if (wordVector[index+3].data[0] == '('){
             defineType = TYPE_FUNCTION;
         }
-        else if (wordVector[index+2].type == TYPE_WORD){
+        else if (wordVector[index+3].type == TYPE_WORD){
             defineType = TYPE_CONSTANT;
         }
         else{
-            printf("not a valid header include statement [%s].\n", wordVector[index+2].data);
+            printf("not a valid define statement [%s].\n", wordVector[index+3].data);
             return;
         }
     }
 
     if (defineType == TYPE_CONSTANT){
+        int defineStrLen = 0;
+        bool addSpace = false;
 
-        int lastPos = -1, defineStrLen = 0;
-        // skip '#' and "define" and constant define
-        for(size_t i=index+3; i < wordVector.size(); i++)
+        // skip '#', "define", space, constant define and space
+        for(size_t i=index+5; i < wordVector.size(); i++)
         {
             if (wordVector[i].line != wordVector[index].line)
                 break;
@@ -106,24 +107,25 @@ void getDefine(Meta_Vector & wordVector, size_t index)
                 break;
             }
 
-            if (lastPos == -1){
-                lastPos = wordVector[i].pos;
+            if (wordVector[i].type == TYPE_SPACE){
+                if (addSpace == false) {
+                    addSpace = true;
+                }
             }
+            else{
+                if (addSpace == true) {
+                    addSpace = false;
+                    strcat(defineStr, wordVector[i-1].data);
+                    defineStrLen += wordVector[i-1].len;
+                }
 
-            // FIXME: should save space string on wordVector
-            if (lastPos != wordVector[i].pos) {
-                memset(defineStr + defineStrLen, 0x20, wordVector[i].pos - lastPos);
-                defineStrLen += wordVector[i].pos - lastPos;
+                strcat(defineStr, wordVector[i].data);
+                defineStrLen += wordVector[i].len;
             }
-
-            strcat(defineStr, wordVector[i].data);
-
-            lastPos = wordVector[i].pos + wordVector[i].len;
-            defineStrLen += wordVector[i].len;
         }
 
         printf("Line %d is a constant define: %s, value is %s, len is %d\n", curLine,
-            wordVector[index+2].data, defineStr, defineStrLen);
+            wordVector[index+3].data, defineStr, defineStrLen);
     }
 }
 

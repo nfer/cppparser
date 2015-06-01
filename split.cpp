@@ -58,6 +58,8 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
         
         else if (isspace(c)){
             CHECK_LAST_TYPE(TYPE_SPACE);
+            if (c == ' ' || c == '\t')
+                word[wordlen++] = c;
         }
         else{
             CHECK_LAST_TYPE(TYPE_SPECIAL);
