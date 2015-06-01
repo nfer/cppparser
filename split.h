@@ -12,13 +12,15 @@ enum Meta_Type{
 };
 
 struct Meta_Data{
-    Meta_Data(char * _data, int _type, int _line, int _pos){
+    Meta_Data(char * _data, int _len, int _type, int _line, int _pos){
         data = _data;
+        len  = _len;
         type = _type;
         line = _line;
         pos  = _pos;
     }
     char * data;
+    int    len;
     int    type;
     int    line;
     int    pos;

@@ -14,8 +14,8 @@ void dumpWordVector(const char * str, Meta_Vector & wordVector)
     // dump wordVector
     for(size_t i=0; i<wordVector.size(); i++)
     {
-        printf("[%3d:%2d] type %d, word:%s\n", wordVector[i].line, wordVector[i].pos,
-            wordVector[i].type, wordVector[i].data);
+        printf("[%3d:%2d] type %d, word[%d]:%s\n", wordVector[i].line, wordVector[i].pos,
+            wordVector[i].type, wordVector[i].len, wordVector[i].data);
     }
 }
 

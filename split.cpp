@@ -26,7 +26,7 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
 
 #define PRINT_LAST_TYPE() \
     if (wordlen > 0) { \
-        wordVector.push_back(Meta_Data(strdup(word), lastType, line, i-wordlen)); \
+        wordVector.push_back(Meta_Data(strdup(word), wordlen, lastType, line, i-wordlen)); \
         memset(word, 0x00, sizeof(word)); \
         wordlen = 0; \
     } \

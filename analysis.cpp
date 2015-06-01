@@ -94,7 +94,7 @@ void getDefine(Meta_Vector & wordVector, size_t index)
 
     if (defineType == TYPE_CONSTANT){
 
-        int lastPos = -1, defineStrLen = 0, dataLen = 0;
+        int lastPos = -1, defineStrLen = 0;
         // skip '#' and "define" and constant define
         for(size_t i=index+3; i < wordVector.size(); i++)
         {
@@ -118,10 +118,8 @@ void getDefine(Meta_Vector & wordVector, size_t index)
 
             strcat(defineStr, wordVector[i].data);
 
-            // FIXME: should add dataLen on Meta_Data struct
-            dataLen = strlen(wordVector[i].data);
-            lastPos = wordVector[i].pos + dataLen;
-            defineStrLen += dataLen;
+            lastPos = wordVector[i].pos + wordVector[i].len;
+            defineStrLen += wordVector[i].len;
         }
 
         printf("Line %d is a constant define: %s, value is %s, len is %d\n", curLine,
