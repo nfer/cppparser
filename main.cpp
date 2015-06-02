@@ -9,7 +9,7 @@
 
 using namespace std;
 
-void dumpWordVector(const char * str, Meta_Vector & wordVector)
+void dumpWordVector(Meta_Vector & wordVector)
 {
     // dump wordVector
     for(size_t i=0; i<wordVector.size(); i++)
@@ -64,7 +64,7 @@ int main(int argc, char * argv[])
 
         split(lineData, read, lineNum, wordVector);
 #ifdef _DEBUG
-        dumpWordVector(lineData, wordVector);
+        dumpWordVector(wordVector);
         freeWordVector(wordVector);
         getchar();
 #endif
@@ -74,7 +74,7 @@ int main(int argc, char * argv[])
         free(lineData);
 
     // dump
-    // dumpWordVector(lineData, wordVector);
+    // dumpWordVector(wordVector);
 
     analysis(wordVector);
 

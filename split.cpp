@@ -16,7 +16,6 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
         cout << "[" << line << "] data:" << data << endl;
 #endif
 
-    int len = strlen(data);
     char word[256] = {'\0'};
     int wordlen = 0;
     int lastType = TYPE_SPACE;
@@ -45,7 +44,7 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
     }
 
     int i;
-    for (i = 0; i < len; i++){
+    for (i = 0; i < datalen; i++){
         char c = data[i];
         if (isalnum(c) || c == '_'){
             CHECK_LAST_TYPE(TYPE_WORD);
@@ -111,5 +110,5 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
         }
     }
 
-    CHECK_LAST_TYPE(TYPE_SPACE);
+    PRINT_LAST_TYPE();
 }
