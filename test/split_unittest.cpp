@@ -1,87 +1,65 @@
 
+#include <stdio.h>
+#include <stdarg.h>
 #include <limits.h>
 #include "gtest/gtest.h"
 #include "split.h"
 
-#define INIT_TEST() \
+void runTest(const char * data, int itemSize, ...) {
   Meta_Vector wordVector;
-
-#define RUN_TEST(data) \
   split(data, strlen(data), 0, wordVector);
 
-#define CLEAN_TEST() \
-  for(size_t i=0; i<wordVector.size(); i++) \
-    { \
-        free(wordVector[i].data); \
-    } \
-    wordVector.clear();
+  EXPECT_EQ(itemSize, (int)wordVector.size());
+
+  va_list ap;
+  va_start(ap, itemSize); // data, len, type, pos
+  for (int i=0; i < itemSize; i++) {
+    EXPECT_EQ(0, strcmp(wordVector[i].data, va_arg(ap, char*)));
+    EXPECT_EQ(va_arg(ap, int), wordVector[i].len);
+    EXPECT_EQ(va_arg(ap, int), wordVector[i].type);
+    EXPECT_EQ(va_arg(ap, int), wordVector[i].pos);
+  }
+  va_end(ap);
+
+  // free wordVector data
+  for(size_t i=0; i<wordVector.size(); i++)
+  {
+      free(wordVector[i].data);
+  }
+  wordVector.clear();
+}
 
 TEST(SplitTest, Blank) {
-  INIT_TEST();
-
-  RUN_TEST("");
-  EXPECT_EQ(0, (int)wordVector.size());
-  CLEAN_TEST();
+  runTest("", 0);
 }
 
 TEST(SplitTest, Space) {
-  INIT_TEST();
-
-  RUN_TEST(" ");
-  EXPECT_EQ(1, (int)wordVector.size());
-  EXPECT_EQ(1, wordVector[0].len);
-  EXPECT_EQ(TYPE_SPACE, wordVector[0].type);
-  CLEAN_TEST();
-
-  RUN_TEST("  ");
-  EXPECT_EQ(1, (int)wordVector.size());
-  EXPECT_EQ(2, wordVector[0].len);
-  EXPECT_EQ(TYPE_SPACE, wordVector[0].type);
-  CLEAN_TEST();
-
-  RUN_TEST("\t");
-  EXPECT_EQ(1, (int)wordVector.size());
-  EXPECT_EQ(1, wordVector[0].len);
-  EXPECT_EQ(TYPE_SPACE, wordVector[0].type);
-  CLEAN_TEST();
-
-  RUN_TEST("\t\t");
-  EXPECT_EQ(1, (int)wordVector.size());
-  EXPECT_EQ(2, wordVector[0].len);
-  EXPECT_EQ(TYPE_SPACE, wordVector[0].type);
-  CLEAN_TEST();
-
-  RUN_TEST("\t \t");
-  EXPECT_EQ(1, (int)wordVector.size());
-  EXPECT_EQ(3, wordVector[0].len);
-  EXPECT_EQ(TYPE_SPACE, wordVector[0].type);
-  CLEAN_TEST();
-
-  RUN_TEST(" \t ");
-  EXPECT_EQ(1, (int)wordVector.size());
-  EXPECT_EQ(3, wordVector[0].len);
-  EXPECT_EQ(TYPE_SPACE, wordVector[0].type);
-  CLEAN_TEST();
+  runTest(" ",     1, " ",     1, TYPE_SPACE, 0);
+  runTest("  ",    1, "  ",    2, TYPE_SPACE, 0);
+  runTest("\t",    1, "\t",    1, TYPE_SPACE, 0);
+  runTest("\t\t",  1, "\t\t",  2, TYPE_SPACE, 0);
+  runTest("\t \t", 1, "\t \t", 3, TYPE_SPACE, 0);
+  runTest(" \t ",  1, " \t ",  3, TYPE_SPACE, 0);
 }
 
 TEST(SplitTest, CRLF) {
-  INIT_TEST();
+  runTest(" \r",   1, " ", 1, TYPE_SPACE,   0);
+  runTest(" \n",   1, " ", 1, TYPE_SPACE,   0);
+  runTest(" \r\n", 1, " ", 1, TYPE_SPACE,   0);
+  runTest(";\r",   1, ";", 1, TYPE_SPECIAL, 0);
+  runTest(";\n",   1, ";", 1, TYPE_SPECIAL, 0);
+  runTest(";\r\n", 1, ";", 1, TYPE_SPECIAL, 0);
+}
 
-  RUN_TEST(" \r");
-  EXPECT_EQ(1, (int)wordVector.size());
-  EXPECT_EQ(1, wordVector[0].len);
-  EXPECT_EQ(TYPE_SPACE, wordVector[0].type);
-  CLEAN_TEST();
-
-  RUN_TEST(" \n");
-  EXPECT_EQ(1, (int)wordVector.size());
-  EXPECT_EQ(1, wordVector[0].len);
-  EXPECT_EQ(TYPE_SPACE, wordVector[0].type);
-  CLEAN_TEST();
-
-  RUN_TEST(" \r\n");
-  EXPECT_EQ(1, (int)wordVector.size());
-  EXPECT_EQ(1, wordVector[0].len);
-  EXPECT_EQ(TYPE_SPACE, wordVector[0].type);
-  CLEAN_TEST();
+TEST(SplitTest, Include) {
+  runTest("#include <stdio.h>", 8,
+    "#",     1, TYPE_SPECIAL, 0,  "include", 7, TYPE_WORD,    1,
+    " ",     1, TYPE_SPACE,   8,  "<",       1, TYPE_SPECIAL, 9,
+    "stdio", 5, TYPE_WORD,    10, ".",       1, TYPE_SPECIAL, 15,
+    "h",     1, TYPE_WORD,    16, ">",       1, TYPE_SPECIAL, 17);
+  runTest("#include \"stdio.h\"", 8,
+    "#",     1, TYPE_SPECIAL, 0,  "include",  7, TYPE_WORD,    1,
+    " ",     1, TYPE_SPACE,   8,  "\"",       1, TYPE_SPECIAL, 9,
+    "stdio", 5, TYPE_WORD,    10, ".",        1, TYPE_SPECIAL, 15,
+    "h",     1, TYPE_WORD,    16, "\"",       1, TYPE_SPECIAL, 17);
 }
