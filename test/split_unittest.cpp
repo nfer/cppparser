@@ -76,3 +76,43 @@ TEST(SplitTest, Include) {
     "types", 5, TYPE_WORD,    14, ".",       1, TYPE_SPECIAL, 19,
     "h",     1, TYPE_WORD,    20, ">",       1, TYPE_SPECIAL, 21);
 }
+
+TEST(SplitTest, DefineConstant) {
+  runTest("#define SPLIT_H", 4,
+    "#",     1, TYPE_SPECIAL, 0,  "define",  6, TYPE_WORD, 1,
+    " ",     1, TYPE_SPACE,   7,  "SPLIT_H", 7, TYPE_WORD, 8);
+
+  runTest("#define PROJNAME     \"PROJNAME\"", 8,
+    "#",        1, TYPE_SPECIAL, 0,  "define",   6, TYPE_WORD,    1,
+    " ",        1, TYPE_SPACE,   7,  "PROJNAME", 8, TYPE_WORD,    8,
+    "     ",    5, TYPE_SPACE,   16, "\"",       1, TYPE_SPECIAL, 21,
+    "PROJNAME", 8, TYPE_WORD,    22, "\"",       1, TYPE_SPECIAL, 30);
+
+  runTest("#define MAXSIZE     (100)", 8,
+    "#",        1, TYPE_SPECIAL, 0,  "define",   6, TYPE_WORD,    1,
+    " ",        1, TYPE_SPACE,   7,  "MAXSIZE",  7, TYPE_WORD,    8,
+    "     ",    5, TYPE_SPACE,   15, "(",        1, TYPE_SPECIAL, 20,
+    "100",      3, TYPE_WORD,    21, ")",        1, TYPE_SPECIAL, 24);
+}
+
+TEST(SplitTest, Viriable) {
+  runTest("int a;", 4,
+    "int", 3, TYPE_WORD, 0, " ", 1, TYPE_SPACE,   3,
+    "a",   1, TYPE_WORD, 4, ";", 1, TYPE_SPECIAL, 5);
+
+  runTest("int a = 10;", 8,
+    "int", 3, TYPE_WORD,    0, " ", 1, TYPE_SPACE,   3,
+    "a",   1, TYPE_WORD,    4, " ", 1, TYPE_SPACE,   5,
+    "=",   1, TYPE_SPECIAL, 6, " ", 1, TYPE_SPACE,   7,
+    "10",  2, TYPE_WORD,    8, ";", 1, TYPE_SPECIAL, 10);
+
+  runTest("char word[256] = {'\\0'};", 16,
+    "char", 4, TYPE_WORD,    0,  " ",  1, TYPE_SPACE,   4,
+    "word", 4, TYPE_WORD,    5,  "[",  1, TYPE_SPECIAL, 9,
+    "256",  3, TYPE_WORD,    10, "]",  1, TYPE_SPECIAL, 13,
+    " ",    1, TYPE_SPACE,   14, "=",  1, TYPE_SPECIAL, 15,
+    " ",    1, TYPE_SPACE,   16, "{",  1, TYPE_SPECIAL, 17,
+    "\'",   1, TYPE_SPECIAL, 18, "\\", 1, TYPE_SPECIAL, 19,
+    "0",    1, TYPE_WORD,    20, "\'", 1, TYPE_SPECIAL, 21,
+    "}",    1, TYPE_SPECIAL, 22, ";",  1, TYPE_SPECIAL, 23);
+}
