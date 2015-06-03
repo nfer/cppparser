@@ -57,9 +57,22 @@ TEST(SplitTest, Include) {
     " ",     1, TYPE_SPACE,   8,  "<",       1, TYPE_SPECIAL, 9,
     "stdio", 5, TYPE_WORD,    10, ".",       1, TYPE_SPECIAL, 15,
     "h",     1, TYPE_WORD,    16, ">",       1, TYPE_SPECIAL, 17);
+
   runTest("#include \"stdio.h\"", 8,
     "#",     1, TYPE_SPECIAL, 0,  "include",  7, TYPE_WORD,    1,
     " ",     1, TYPE_SPACE,   8,  "\"",       1, TYPE_SPECIAL, 9,
     "stdio", 5, TYPE_WORD,    10, ".",        1, TYPE_SPECIAL, 15,
     "h",     1, TYPE_WORD,    16, "\"",       1, TYPE_SPECIAL, 17);
+
+  runTest("#include <iostream>", 6,
+    "#",        1, TYPE_SPECIAL, 0,  "include", 7, TYPE_WORD,    1,
+    " ",        1, TYPE_SPACE,   8,  "<",       1, TYPE_SPECIAL, 9,
+    "iostream", 8, TYPE_WORD,    10, ">",       1, TYPE_SPECIAL, 18);
+
+  runTest("#include <sys/types.h>", 10,
+    "#",     1, TYPE_SPECIAL, 0,  "include", 7, TYPE_WORD,    1,
+    " ",     1, TYPE_SPACE,   8,  "<",       1, TYPE_SPECIAL, 9,
+    "sys",   3, TYPE_WORD,    10, "/",       1, TYPE_SPECIAL, 13,
+    "types", 5, TYPE_WORD,    14, ".",       1, TYPE_SPECIAL, 19,
+    "h",     1, TYPE_WORD,    20, ">",       1, TYPE_SPECIAL, 21);
 }
