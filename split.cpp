@@ -76,7 +76,6 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
                 case '\'':
                 case ',':
                 case ';':
-                case ':':
                 case '*':
                 case '&':
                 case '!':
@@ -90,6 +89,7 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
                     isStringMode = !isStringMode;
                     break;
 
+                case ':':
                 case '/':
                     if (wordlen == 0){
                         PRINT_LAST_TYPE();

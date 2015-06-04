@@ -112,3 +112,19 @@ TEST(SplitTest, Viriable) {
     "char", " ", "word", "[",  "256", "]",  " ", "=",
     " ",    "{", "'",   "\\", "0",   "'", "}", ";");
 }
+
+TEST(SplitTest, Special) {
+  // check /=
+  runTest("max/=10;", 4, "max", "/=", "10", ";");
+
+  // check ::
+  runTest("QTextEdit::ExtraSelection selection;", 6,
+    "QTextEdit", "::", "ExtraSelection", " ", "selection", ";");
+
+  // check (), )), ), );
+  runTest("func(aa(), bb());", 12,
+    "func", "(", "aa", "(", ")", ",", " ", "bb", "(", ")", ")", ";");
+
+  // check ++ and ++)
+  runTest("func(i++)", 5, "func", "(", "i", "++", ")");
+}
