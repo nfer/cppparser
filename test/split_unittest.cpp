@@ -14,7 +14,7 @@ void runTest(const char * data, int itemSize, ...) {
   va_list ap;
   va_start(ap, itemSize); // data, len, type, pos
   for (int i=0; i < itemSize; i++) {
-    EXPECT_EQ(0, strcmp(wordVector[i].data, va_arg(ap, char*)));
+    EXPECT_STREQ(wordVector[i].data, va_arg(ap, char*));
     EXPECT_EQ(va_arg(ap, int), wordVector[i].len);
     EXPECT_EQ(va_arg(ap, int), wordVector[i].type);
     EXPECT_EQ(va_arg(ap, int), wordVector[i].pos);
