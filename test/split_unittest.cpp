@@ -5,19 +5,40 @@
 #include "gtest/gtest.h"
 #include "split.h"
 
+int getMetaType(char c) {
+  if (isalnum(c) || c == '_')
+    return TYPE_WORD;
+  else if (isspace(c))
+    return TYPE_SPACE;
+  else
+    return TYPE_SPECIAL;
+}
+
 void runTest(const char * data, int itemSize, ...) {
   Meta_Vector wordVector;
   split(data, strlen(data), 0, wordVector);
 
   EXPECT_EQ(itemSize, (int)wordVector.size());
 
+  const char * value = NULL;
+  int len;
+  int type;
+  int pos = 0;
+
   va_list ap;
-  va_start(ap, itemSize); // data, len, type, pos
+  va_start(ap, itemSize);
   for (int i=0; i < itemSize; i++) {
-    EXPECT_STREQ(wordVector[i].data, va_arg(ap, char*));
-    EXPECT_EQ(va_arg(ap, int), wordVector[i].len);
-    EXPECT_EQ(va_arg(ap, int), wordVector[i].type);
-    EXPECT_EQ(va_arg(ap, int), wordVector[i].pos);
+    value = va_arg(ap, char*);
+    EXPECT_STREQ(wordVector[i].data, value);
+
+    len = strlen(value);
+    EXPECT_EQ(len, wordVector[i].len);
+
+    type = getMetaType(value[0]);
+    EXPECT_EQ(type, wordVector[i].type);
+
+    EXPECT_EQ(pos, wordVector[i].pos);
+    pos += len;
   }
   va_end(ap);
 
@@ -34,85 +55,60 @@ TEST(SplitTest, Blank) {
 }
 
 TEST(SplitTest, Space) {
-  runTest(" ",     1, " ",     1, TYPE_SPACE, 0);
-  runTest("  ",    1, "  ",    2, TYPE_SPACE, 0);
-  runTest("\t",    1, "\t",    1, TYPE_SPACE, 0);
-  runTest("\t\t",  1, "\t\t",  2, TYPE_SPACE, 0);
-  runTest("\t \t", 1, "\t \t", 3, TYPE_SPACE, 0);
-  runTest(" \t ",  1, " \t ",  3, TYPE_SPACE, 0);
+  runTest(" ",     1, " ");
+  runTest("  ",    1, "  ");
+  runTest("\t",    1, "\t");
+  runTest("\t\t",  1, "\t\t");
+  runTest("\t \t", 1, "\t \t");
+  runTest(" \t ",  1, " \t ");
 }
 
 TEST(SplitTest, CRLF) {
-  runTest(" \r",   1, " ", 1, TYPE_SPACE,   0);
-  runTest(" \n",   1, " ", 1, TYPE_SPACE,   0);
-  runTest(" \r\n", 1, " ", 1, TYPE_SPACE,   0);
-  runTest(";\r",   1, ";", 1, TYPE_SPECIAL, 0);
-  runTest(";\n",   1, ";", 1, TYPE_SPECIAL, 0);
-  runTest(";\r\n", 1, ";", 1, TYPE_SPECIAL, 0);
+  runTest(" \r",   1, " ");
+  runTest(" \n",   1, " ");
+  runTest(" \r\n", 1, " ");
+  runTest(";\r",   1, ";");
+  runTest(";\n",   1, ";");
+  runTest(";\r\n", 1, ";");
 }
 
 TEST(SplitTest, Include) {
   runTest("#include <stdio.h>", 8,
-    "#",     1, TYPE_SPECIAL, 0,  "include", 7, TYPE_WORD,    1,
-    " ",     1, TYPE_SPACE,   8,  "<",       1, TYPE_SPECIAL, 9,
-    "stdio", 5, TYPE_WORD,    10, ".",       1, TYPE_SPECIAL, 15,
-    "h",     1, TYPE_WORD,    16, ">",       1, TYPE_SPECIAL, 17);
+    "#",  "include", " ",  "<", "stdio", ".", "h", ">");
 
   runTest("#include \"stdio.h\"", 8,
-    "#",     1, TYPE_SPECIAL, 0,  "include",  7, TYPE_WORD,    1,
-    " ",     1, TYPE_SPACE,   8,  "\"",       1, TYPE_SPECIAL, 9,
-    "stdio", 5, TYPE_WORD,    10, ".",        1, TYPE_SPECIAL, 15,
-    "h",     1, TYPE_WORD,    16, "\"",       1, TYPE_SPECIAL, 17);
+    "#",  "include", " ",  "\"", "stdio", ".", "h", "\"");
 
   runTest("#include <iostream>", 6,
-    "#",        1, TYPE_SPECIAL, 0,  "include", 7, TYPE_WORD,    1,
-    " ",        1, TYPE_SPACE,   8,  "<",       1, TYPE_SPECIAL, 9,
-    "iostream", 8, TYPE_WORD,    10, ">",       1, TYPE_SPECIAL, 18);
+    "#",  "include", " ",  "<", "iostream", ">");
 
   runTest("#include <sys/types.h>", 10,
-    "#",     1, TYPE_SPECIAL, 0,  "include", 7, TYPE_WORD,    1,
-    " ",     1, TYPE_SPACE,   8,  "<",       1, TYPE_SPECIAL, 9,
-    "sys",   3, TYPE_WORD,    10, "/",       1, TYPE_SPECIAL, 13,
-    "types", 5, TYPE_WORD,    14, ".",       1, TYPE_SPECIAL, 19,
-    "h",     1, TYPE_WORD,    20, ">",       1, TYPE_SPECIAL, 21);
+    "#",  "include", " ",  "<", "sys", "/", "types", ".", "h", ">");
 }
 
 TEST(SplitTest, DefineConstant) {
   runTest("#define SPLIT_H", 4,
-    "#",     1, TYPE_SPECIAL, 0,  "define",  6, TYPE_WORD, 1,
-    " ",     1, TYPE_SPACE,   7,  "SPLIT_H", 7, TYPE_WORD, 8);
+    "#",  "define", " ",  "SPLIT_H");
 
   runTest("#define PROJNAME     \"PROJNAME\"", 8,
-    "#",        1, TYPE_SPECIAL, 0,  "define",   6, TYPE_WORD,    1,
-    " ",        1, TYPE_SPACE,   7,  "PROJNAME", 8, TYPE_WORD,    8,
-    "     ",    5, TYPE_SPACE,   16, "\"",       1, TYPE_SPECIAL, 21,
-    "PROJNAME", 8, TYPE_WORD,    22, "\"",       1, TYPE_SPECIAL, 30);
+    "#",  "define", " ",  "PROJNAME", "     ", "\"", "PROJNAME", "\"");
 
   runTest("#define MAXSIZE     (100)", 8,
-    "#",        1, TYPE_SPECIAL, 0,  "define",   6, TYPE_WORD,    1,
-    " ",        1, TYPE_SPACE,   7,  "MAXSIZE",  7, TYPE_WORD,    8,
-    "     ",    5, TYPE_SPACE,   15, "(",        1, TYPE_SPECIAL, 20,
-    "100",      3, TYPE_WORD,    21, ")",        1, TYPE_SPECIAL, 24);
+    "#",  "define", " ",  "MAXSIZE", "     ", "(", "100", ")");
 }
 
 TEST(SplitTest, Viriable) {
   runTest("int a;", 4,
-    "int", 3, TYPE_WORD, 0, " ", 1, TYPE_SPACE,   3,
-    "a",   1, TYPE_WORD, 4, ";", 1, TYPE_SPECIAL, 5);
+    "int", " ", "a", ";");
 
   runTest("int a = 10;", 8,
-    "int", 3, TYPE_WORD,    0, " ", 1, TYPE_SPACE,   3,
-    "a",   1, TYPE_WORD,    4, " ", 1, TYPE_SPACE,   5,
-    "=",   1, TYPE_SPECIAL, 6, " ", 1, TYPE_SPACE,   7,
-    "10",  2, TYPE_WORD,    8, ";", 1, TYPE_SPECIAL, 10);
+    "int", " ", "a", " ", "=", " ", "10", ";");
 
   runTest("char word[256] = {'\\0'};", 16,
-    "char", 4, TYPE_WORD,    0,  " ",  1, TYPE_SPACE,   4,
-    "word", 4, TYPE_WORD,    5,  "[",  1, TYPE_SPECIAL, 9,
-    "256",  3, TYPE_WORD,    10, "]",  1, TYPE_SPECIAL, 13,
-    " ",    1, TYPE_SPACE,   14, "=",  1, TYPE_SPECIAL, 15,
-    " ",    1, TYPE_SPACE,   16, "{",  1, TYPE_SPECIAL, 17,
-    "\'",   1, TYPE_SPECIAL, 18, "\\", 1, TYPE_SPECIAL, 19,
-    "0",    1, TYPE_WORD,    20, "\'", 1, TYPE_SPECIAL, 21,
-    "}",    1, TYPE_SPECIAL, 22, ";",  1, TYPE_SPECIAL, 23);
+    "char",  " ", "word",  "[", "256", "]", " ", "=",
+    " ", "{", "'", "\\", "0", "'", "}", ";");
+
+  runTest("char word[256] = {'\\0'};", 16,
+    "char", " ", "word", "[",  "256", "]",  " ", "=",
+    " ",    "{", "'",   "\\", "0",   "'", "}", ";");
 }
