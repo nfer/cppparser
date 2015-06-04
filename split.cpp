@@ -21,6 +21,7 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
     int lastType = TYPE_SPACE;
     bool isEscapeChar = false;
     bool isStringMode = false;
+    bool isSplitAfter = false;
 
 #define PRINT_LAST_TYPE() \
     if (wordlen > 0) { \
@@ -66,6 +67,11 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
 
             CHECK_ESCAPE_CHAR();
 
+            if (isSplitAfter) {
+                PRINT_LAST_TYPE();
+                isSplitAfter = false;
+            }
+
             switch(c){
                 case '(':
                 case ')':
@@ -81,6 +87,7 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
                 case '!':
                     PRINT_LAST_TYPE();
                     word[wordlen++] = c;
+                    isSplitAfter = true;
                     break;
 
                 case '\"':
@@ -91,8 +98,37 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
 
                 case ':':
                 case '/':
+                case '<':
+                case '-':
+                case '+':
                     if (wordlen == 0){
                         PRINT_LAST_TYPE();
+                    }
+                    else if (wordlen == 1 && word[0] != c) {
+                        PRINT_LAST_TYPE();
+                    }
+                    else {
+                        // do nothing
+                    }
+
+                    word[wordlen++] = c;
+                    break;
+
+                case '=':
+                    if (wordlen == 0){
+                        PRINT_LAST_TYPE();
+                    }
+                    else if (wordlen == 1 && word[0] != c) {
+                        if (word[0] == '+' || word[0] == '-' || word[0] == '*' || word[0] == '/' ||
+                            word[0] == '%' || word[0] == '&' || word[0] == '|' || word[0] == '!') {
+                            // do nothing
+                        }
+                        else{
+                            PRINT_LAST_TYPE();
+                        }
+                    }
+                    else {
+                        // do nothing
                     }
 
                     word[wordlen++] = c;

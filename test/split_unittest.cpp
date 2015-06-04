@@ -127,4 +127,17 @@ TEST(SplitTest, Special) {
 
   // check ++ and ++)
   runTest("func(i++)", 5, "func", "(", "i", "++", ")");
+
+  // check <<, )<, <" and ";
+  runTest("qWarning()<<\"hello world\";", 10, "qWarning", "(", ")", "<<",
+    "\"", "hello", " ", "world", "\"", ";");
+
+  // check ):, ){;
+  runTest("LineNumberArea(CodeEditor*editor):QWidget(editor){", 12,
+    "LineNumberArea", "(", "CodeEditor", "*", "editor", ")", ":",
+    "QWidget", "(", "editor", ")", "{");
+
+  // check ]= and =-
+  runTest("mBookMarkList[i]=-1;", 8, "mBookMarkList", "[", "i", "]", "=",
+    "-", "1", ";");
 }
