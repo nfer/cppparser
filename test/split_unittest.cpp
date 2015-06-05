@@ -140,4 +140,20 @@ TEST(SplitTest, Special) {
   // check ]= and =-
   runTest("mBookMarkList[i]=-1;", 8, "mBookMarkList", "[", "i", "]", "=",
     "-", "1", ";");
+
+  // check ') and )*
+  runTest("intspace=width(QLatin1Char('9'))*digits;", 14,
+    "intspace", "=", "width", "(", "QLatin1Char",
+    "(", "'", "9", "'", ")", ")", "*", "digits", ";");
+
+  // check <" and "<
+  runTest("cout<<\"hello\"<<endl;", 8,
+    "cout", "<<", "\"", "hello", "\"", "<<", "endl", ";");
+
+  // check ==
+  runTest("if(a==b)", 6, "if", "(", "a", "==", "b", ")");
+
+  // check /* and */
+  runTest("int a;/*multiline comments*/", 9,
+    "int", " ", "a", ";", "/*", "multiline", " ", "comments", "*/");
 }
