@@ -82,7 +82,6 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
                 case '\'':
                 case ',':
                 case ';':
-                case '&':
                 case '!':
                     PRINT_LAST_TYPE();
                     word[wordlen++] = c;
@@ -99,6 +98,7 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
                 case '<':
                 case '-':
                 case '+':
+                case '&':
                     if (wordlen == 0){
                         PRINT_LAST_TYPE();
                     }

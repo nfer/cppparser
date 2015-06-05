@@ -156,4 +156,12 @@ TEST(SplitTest, Special) {
   // check /* and */
   runTest("int a;/*multiline comments*/", 9,
     "int", " ", "a", ";", "/*", "multiline", " ", "comments", "*/");
+
+  // check -> and ).
+  runTest("event->rect().bottom()", 9,
+    "event", "->", "rect", "(", ")", ".", "bottom", "(", ")");
+
+  // check &&
+  runTest("if(x&&y)", 6, "if", "(", "x", "&&", "y", ")");
+
 }
