@@ -113,35 +113,68 @@ TEST(SplitTest, Viriable) {
     " ",    "{", "'",   "\\", "0",   "'", "}", ";");
 }
 
-TEST(SplitTest, Special) {
+TEST(SplitTest, Special_Slash) {
   // check /=
   runTest("max/=10;", 4, "max", "/=", "10", ";");
+  // check /*
+  runTest("/*multiline comments start", 6,
+    "/*", "multiline", " ", "comments", " ", "start");
+  // check //
+  runTest("//comment", 2, "//", "comment");
+  // check ///
+  runTest("///comment", 2, "///", "comment");
+  // check /(
+  runTest("a/(b)", 5, "a", "/", "(", "b", ")");
+}
 
+TEST(SplitTest, Special_Colon) {
   // check ::
-  runTest("QTextEdit::ExtraSelection selection;", 6,
-    "QTextEdit", "::", "ExtraSelection", " ", "selection", ";");
+  runTest("a::b", 3, "a", "::", "b");
+}
 
-  // check (), )), ), );
-  runTest("func(aa(), bb());", 12,
-    "func", "(", "aa", "(", ")", ",", " ", "bb", "(", ")", ")", ";");
+TEST(SplitTest, Special_OpenParen) {
+  // check ()
+  runTest("func();", 4, "func", "(", ")", ";");
+}
 
+TEST(SplitTest, Special_CloseParen) {
+  // check ))
+  runTest("func(aa())", 6, "func", "(", "aa", "(", ")", ")");
+  // check ),
+  runTest("func(aa(),bb)", 8, "func", "(", "aa", "(", ")", ",", "bb", ")");
+  // check );
+  runTest("func(aa);", 5, "func", "(", "aa", ")", ";");
+  // check )<
+  runTest("(a+b)<c", 7, "(", "a", "+", "b", ")", "<", "c");
+  // check ):
+  runTest("child():Parent()", 7, "child", "(", ")", ":", "Parent", "(", ")");
+  // check ){
+  runTest("func(){", 4, "func", "(", ")", "{");
+  // check )*
+  runTest("(a+b)+c", 7, "(", "a", "+", "b", ")", "+", "c");
+  // check )/
+  runTest("(a+b)-c", 7, "(", "a", "+", "b", ")", "-", "c");
+  // check )*
+  runTest("(a+b)*c", 7, "(", "a", "+", "b", ")", "*", "c");
+  // check )/
+  runTest("(a+b)/c", 7, "(", "a", "+", "b", ")", "/", "c");
+  // check ).
+  runTest("data().value", 5, "data", "(", ")", ".", "value");
+}
+
+TEST(SplitTest, Special) {
   // check ++ and ++)
   runTest("func(i++)", 5, "func", "(", "i", "++", ")");
 
-  // check <<, )<, <" and ";
+  // check <<, <" and ";
   runTest("qWarning()<<\"hello world\";", 10, "qWarning", "(", ")", "<<",
     "\"", "hello", " ", "world", "\"", ";");
-
-  // check ):, ){;
-  runTest("LineNumberArea(CodeEditor*editor):QWidget(editor){", 12,
-    "LineNumberArea", "(", "CodeEditor", "*", "editor", ")", ":",
-    "QWidget", "(", "editor", ")", "{");
 
   // check ]= and =-
   runTest("mBookMarkList[i]=-1;", 8, "mBookMarkList", "[", "i", "]", "=",
     "-", "1", ";");
 
-  // check ') and )*
+  // check ')
   runTest("intspace=width(QLatin1Char('9'))*digits;", 14,
     "intspace", "=", "width", "(", "QLatin1Char",
     "(", "'", "9", "'", ")", ")", "*", "digits", ";");
@@ -153,15 +186,26 @@ TEST(SplitTest, Special) {
   // check ==
   runTest("if(a==b)", 6, "if", "(", "a", "==", "b", ")");
 
-  // check /* and */
-  runTest("int a;/*multiline comments*/", 9,
-    "int", " ", "a", ";", "/*", "multiline", " ", "comments", "*/");
+  // check */
+  runTest("multiline comments end*/", 6,
+    "multiline", " ", "comments", " ", "end", "*/");
 
-  // check -> and ).
+  // check ->
   runTest("event->rect().bottom()", 9,
     "event", "->", "rect", "(", ")", ".", "bottom", "(", ")");
 
   // check &&
   runTest("if(x&&y)", 6, "if", "(", "x", "&&", "y", ")");
 
+  // check ;/
+  runTest("int a;//comment", 6, "int", " ", "a", ";", "//", "comment");
+
+  // check &,
+  runTest("void updateLineNumberArea(const QRect &, int);", 14,
+    "void", " ", "updateLineNumberArea", "(", "const", " ", "QRect", " ",
+    "&", ",", " ", "int", ")", ";");
+
+  // check ];
+  runTest("int      mBookMarkList[BOOKMARKMAXCOUNT];", 7,
+    "int", "      ", "mBookMarkList", "[", "BOOKMARKMAXCOUNT", "]", ";");
 }
