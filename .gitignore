@@ -30,3 +30,4 @@
 # Project Special files
 cppparser
 objects
+test/*_gtestcase
