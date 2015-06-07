@@ -113,7 +113,7 @@ TEST(SplitTest, Viriable) {
     " ",    "{", "'",   "\\", "0",   "'", "}", ";");
 }
 
-TEST(SplitTest, Special_Slash) {
+TEST(SplitTest, Slash) {
   // check /=
   runTest("max/=10;", 4, "max", "/=", "10", ";");
   // check /*
@@ -127,17 +127,17 @@ TEST(SplitTest, Special_Slash) {
   runTest("a/(b)", 5, "a", "/", "(", "b", ")");
 }
 
-TEST(SplitTest, Special_Colon) {
+TEST(SplitTest, Colon) {
   // check ::
   runTest("a::b", 3, "a", "::", "b");
 }
 
-TEST(SplitTest, Special_OpenParen) {
+TEST(SplitTest, OpenParenthesis) {
   // check ()
   runTest("func();", 4, "func", "(", ")", ";");
 }
 
-TEST(SplitTest, Special_CloseParen) {
+TEST(SplitTest, CloseParenthesis) {
   // check ))
   runTest("func(aa())", 6, "func", "(", "aa", "(", ")", ")");
   // check ),
@@ -162,50 +162,81 @@ TEST(SplitTest, Special_CloseParen) {
   runTest("data().value", 5, "data", "(", ")", ".", "value");
 }
 
-TEST(SplitTest, Special) {
-  // check ++ and ++)
-  runTest("func(i++)", 5, "func", "(", "i", "++", ")");
-
-  // check <<, <" and ";
-  runTest("qWarning()<<\"hello world\";", 10, "qWarning", "(", ")", "<<",
-    "\"", "hello", " ", "world", "\"", ";");
-
-  // check ]= and =-
-  runTest("mBookMarkList[i]=-1;", 8, "mBookMarkList", "[", "i", "]", "=",
-    "-", "1", ";");
-
+TEST(SplitTest, SingleQuotation) {
   // check ')
-  runTest("intspace=width(QLatin1Char('9'))*digits;", 14,
-    "intspace", "=", "width", "(", "QLatin1Char",
-    "(", "'", "9", "'", ")", ")", "*", "digits", ";");
+  runTest("if(a=='9')", 8, "if", "(", "a", "==", "'", "9", "'", ")");
+}
 
-  // check <" and "<
+TEST(SplitTest, DoubleQuotation) {
+  // check ";
+  runTest("data=\"hello\";", 6, "data", "=", "\"", "hello", "\"", ";");
+  // check ",
+  runTest("data=\"hello\",b;", 8,
+    "data", "=", "\"", "hello", "\"", ",", "b", ";");
+  // check "<
   runTest("cout<<\"hello\"<<endl;", 8,
     "cout", "<<", "\"", "hello", "\"", "<<", "endl", ";");
+}
 
+TEST(SplitTest, Plus) {
+  // check ++
+  runTest("i++", 2, "i", "++");
+  // check +;
+  runTest("i++;", 3, "i", "++", ";");
+  // check +)
+  runTest("func(i++)", 5, "func", "(", "i", "++", ")");
+}
+
+TEST(SplitTest, Minus) {
+  // check --
+  runTest("i--", 2, "i", "--");
+  // check -;
+  runTest("i--;", 3, "i", "--", ";");
+  // check -)
+  runTest("func(i--)", 5, "func", "(", "i", "--", ")");
+  // check ->
+  runTest("data->value", 3, "data", "->", "value");
+}
+
+TEST(SplitTest, LessThan) {
+  // check <<
+  runTest("cout<<data;", 4, "cout", "<<", "data", ";");
+  // check <"
+  runTest("cout<<\"data\";", 6, "cout", "<<", "\"", "data", "\"", ";");
+}
+
+TEST(SplitTest, Equal) {
+  // check =-
+  runTest("a=-1;", 5, "a", "=", "-", "1", ";");
   // check ==
   runTest("if(a==b)", 6, "if", "(", "a", "==", "b", ")");
+}
 
+TEST(SplitTest, And) {
+  // check &&
+  runTest("if(x&&y)", 6, "if", "(", "x", "&&", "y", ")");
+  // check &)
+  runTest("void func(QRect &);", 9,
+    "void", " ", "func", "(", "QRect", " ", "&", ")", ";");
+  // check &,
+  runTest("void func(QRect &, int);", 12,
+    "void", " ", "func", "(", "QRect", " ", "&", ",", " ", "int", ")", ";");
+}
+
+TEST(SplitTest, CloseBracket) {
+  // check ]=
+  runTest("data[i]=0;", 7,  "data", "[", "i", "]", "=", "0", ";");
+  // check ];
+  runTest("int data[4];", 7, "int", " ", "data", "[", "4", "]", ";");
+}
+
+TEST(SplitTest, Semicolon) {
+  // check ;/
+  runTest("int a;//comment", 6, "int", " ", "a", ";", "//", "comment");
+}
+
+TEST(SplitTest, Star) {
   // check */
   runTest("multiline comments end*/", 6,
     "multiline", " ", "comments", " ", "end", "*/");
-
-  // check ->
-  runTest("event->rect().bottom()", 9,
-    "event", "->", "rect", "(", ")", ".", "bottom", "(", ")");
-
-  // check &&
-  runTest("if(x&&y)", 6, "if", "(", "x", "&&", "y", ")");
-
-  // check ;/
-  runTest("int a;//comment", 6, "int", " ", "a", ";", "//", "comment");
-
-  // check &,
-  runTest("void updateLineNumberArea(const QRect &, int);", 14,
-    "void", " ", "updateLineNumberArea", "(", "const", " ", "QRect", " ",
-    "&", ",", " ", "int", ")", ";");
-
-  // check ];
-  runTest("int      mBookMarkList[BOOKMARKMAXCOUNT];", 7,
-    "int", "      ", "mBookMarkList", "[", "BOOKMARKMAXCOUNT", "]", ";");
 }
