@@ -65,7 +65,7 @@ void getDefine(Meta_Vector & wordVector, size_t index)
     int defineType = TYPE_CONSTANT;
     char defineStr[256] = {'\0'};
 
-    // #define A a or just #define A
+    // #define A
     if (index + 3 >= wordVector.size() || wordVector[index+3].line != curLine){
         printf("not a full define statement [%d, %d].\n", (int)index, (int)wordVector.size());
         return ;
@@ -80,10 +80,11 @@ void getDefine(Meta_Vector & wordVector, size_t index)
             printf("not a valid define statement [%s].\n", wordVector[index+2].data);
     }
     else{
-        if (wordVector[index+3].data[0] == '('){
+        if (wordVector[index+4].data[0] == '('){
             defineType = TYPE_FUNCTION;
         }
-        else if (wordVector[index+3].type == TYPE_WORD){
+        else if (wordVector[index+4].type == TYPE_SPACE &&
+                 wordVector[index+5].type == TYPE_WORD){
             defineType = TYPE_CONSTANT;
         }
         else{
@@ -126,6 +127,9 @@ void getDefine(Meta_Vector & wordVector, size_t index)
 
         printf("Line %d is a constant define: %s, value is %s, len is %d\n", curLine,
             wordVector[index+3].data, defineStr, defineStrLen);
+    }
+    else{
+        printf("Line %d is a function define: %s\n", curLine, wordVector[index+3].data);
     }
 }
 
