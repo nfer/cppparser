@@ -5,6 +5,27 @@
 
 #include "analysis.h"
 
+int restoreLine(Meta_Vector & wordVector, size_t index, char * line) {
+    int curLine = wordVector[index].line;
+    int lineLen = 0;
+
+    for(size_t i=index; i < wordVector.size(); i++) {
+        Meta_Struct meta = wordVector[i];
+        if (meta.line != curLine)
+            break;
+
+        if (meta.type == TYPE_SPECIAL) {
+            strcat(line, meta.data.chr);
+            lineLen += meta.len;
+        }
+        else{
+            strcat(line, meta.data.str);
+            lineLen += meta.len;
+        }
+    }
+    return 0;
+}
+
 void getIncludeFiles(Meta_Vector & wordVector, size_t index)
 {
     int curLine = wordVector[index].line;
@@ -14,7 +35,9 @@ void getIncludeFiles(Meta_Vector & wordVector, size_t index)
 
     // #include <string.h> or #include <vector>
     if (index + 5 >= wordVector.size() || wordVector[index+5].line != curLine){
-        printf("not a full header include statement [%d, %d].\n", (int)index, (int)wordVector.size());
+        restoreLine(wordVector, index, headerStr);
+        printf("Line %d is not a full header include statement: %s\n",
+            curLine, headerStr);
         return ;
     }
 
@@ -25,7 +48,9 @@ void getIncludeFiles(Meta_Vector & wordVector, size_t index)
         headerType = TYPE_SYSTEM;
     }
     else{
-        printf("Line %d is not a valid header include statement.\n", curLine);
+        restoreLine(wordVector, index, headerStr);
+        printf("Line %d is not a valid header include statement: %s.\n",
+            curLine, headerStr);
         return;
     }
 
@@ -70,7 +95,9 @@ void getIncludeFiles(Meta_Vector & wordVector, size_t index)
             headerStrLen += meta.len;
         }
         else{
-            printf("Line %d is not a valid header include statement.\n", curLine);
+            restoreLine(wordVector, index, headerStr);
+            printf("Line %d is not a valid header include statement: %s.\n",
+                curLine, headerStr);
             break;
         }
     }
@@ -84,7 +111,8 @@ void getDefine(Meta_Vector & wordVector, size_t index)
 
     // #define A
     if (index + 3 >= wordVector.size() || wordVector[index+3].line != curLine){
-        printf("Line %d is not a full define statement.\n", curLine);
+        restoreLine(wordVector, index, defineStr);
+        printf("Line %d is not a full define statement:%s\n", curLine, defineStr);
         return ;
     }
 
@@ -92,8 +120,11 @@ void getDefine(Meta_Vector & wordVector, size_t index)
         if (wordVector[index+3].type == TYPE_WORD)
             printf("Line %d is a NULL constant define: %s\n", curLine,
                     wordVector[index+3].data.str);
-        else
-            printf("Line %d is not a valid NULL constant define statement\n", curLine);
+        else {
+            restoreLine(wordVector, index, defineStr);
+            printf("Line %d is not a valid NULL constant define statement:%s\n",
+                curLine, defineStr);
+        }
 
         return ;
     }
@@ -105,7 +136,8 @@ void getDefine(Meta_Vector & wordVector, size_t index)
             defineType = TYPE_CONSTANT;
         }
         else{
-            printf("Line %d is not a valid define statement\n", curLine);
+            restoreLine(wordVector, index, defineStr);
+            printf("Line %d is not a valid define statement:%s\n", curLine, defineStr);
             return;
         }
     }
