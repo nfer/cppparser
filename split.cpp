@@ -99,6 +99,7 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
                 case '-':
                 case '+':
                 case '&':
+                case '.':
                     if (wordlen == 0){
                         PRINT_LAST_TYPE();
                     }
@@ -118,6 +119,25 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
                     }
                     else if (wordlen == 1 && word[0] != c) {
                         if (word[0] == '*') {
+                            // do nothing
+                        }
+                        else{
+                            PRINT_LAST_TYPE();
+                        }
+                    }
+                    else {
+                        // do nothing
+                    }
+
+                    word[wordlen++] = c;
+                    break;
+
+                case '*':
+                    if (wordlen == 0){
+                        PRINT_LAST_TYPE();
+                    }
+                    else if (wordlen == 1 && word[0] != c) {
+                        if (word[0] == '/') {
                             // do nothing
                         }
                         else{

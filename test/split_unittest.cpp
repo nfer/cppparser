@@ -181,8 +181,24 @@ TEST(SplitTest, DoubleQuotation) {
 TEST(SplitTest, Plus) {
   // check ++
   runTest("i++", 2, "i", "++");
+  // check +=
+  runTest("i+=1;", 4, "i", "+=", "1", ";");
+  // check +.
+  runTest("1+.2;", 5, "1", "+", ".", "2", ";");
+  // check +!
+  runTest("a+!b;", 5, "a", "+", "!", "b", ";");
+
+  // check +*
+  runTest("i+*pointer", 4, "i", "+", "*", "pointer");
+  // check +&
+  runTest("i+&data", 4, "i", "+", "&", "data");
+
+  // check +,
+  runTest("i++,j++", 5, "i", "++", ",", "j", "++");
   // check +;
   runTest("i++;", 3, "i", "++", ";");
+  // check +(
+  runTest("a+(b)", 5, "a", "+", "(", "b", ")");
   // check +)
   runTest("func(i++)", 5, "func", "(", "i", "++", ")");
 }
