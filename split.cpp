@@ -17,170 +17,56 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
 #endif
 
     char word[256] = {'\0'};
-    int wordlen = 0;
-    int lastType = TYPE_SPACE;
+    int len = 0;
+    int type = TYPE_SPACE;
     bool isEscapeChar = false;
-    bool isStringMode = false;
-    bool isSplitAfter = false;
 
 #define PRINT_LAST_TYPE() \
-    if (wordlen > 0) { \
-        wordVector.push_back(Meta_Data(strdup(word), wordlen, lastType, line, i-wordlen)); \
+    if (len > 0) { \
+        if (type == TYPE_SPECIAL) \
+            wordVector.push_back(Meta_Struct(word[0], type, line, i-len)); \
+        else \
+            wordVector.push_back(Meta_Struct(word, len, type, line, i-len)); \
         memset(word, 0x00, sizeof(word)); \
-        wordlen = 0; \
-    } \
-
-#define CHECK_LAST_TYPE(type) \
-    if(lastType != type){ \
-        PRINT_LAST_TYPE(); \
-        lastType = type; \
+        len = 0; \
     }
 
-#define CHECK_ESCAPE_CHAR() \
-    if (isEscapeChar){ \
-        isEscapeChar = false; \
-        word[wordlen++] = c; \
+#define CHECK_LAST_TYPE(_type) \
+    if(type != _type){ \
         PRINT_LAST_TYPE(); \
-        continue; \
+        type = _type; \
     }
 
     int i;
     for (i = 0; i < datalen; i++){
         char c = data[i];
+
+        if (isEscapeChar){
+            isEscapeChar = false;
+            word[0] = c;
+            PRINT_LAST_TYPE();
+            continue;
+        }
+
         if (isalnum(c) || c == '_'){
             CHECK_LAST_TYPE(TYPE_WORD);
-
-            CHECK_ESCAPE_CHAR();
-
-            word[wordlen++] = c;
+            word[len++] = c;
         }
         
         else if (isspace(c)){
             CHECK_LAST_TYPE(TYPE_SPACE);
             if (c == ' ' || c == '\t')
-                word[wordlen++] = c;
+                word[len++] = c;
             else
                 break;
         }
         else{
-            CHECK_LAST_TYPE(TYPE_SPECIAL);
+            PRINT_LAST_TYPE();
+            type = TYPE_SPECIAL;
+            word[len++] = c;
 
-            CHECK_ESCAPE_CHAR();
-
-            if (isSplitAfter) {
-                PRINT_LAST_TYPE();
-                isSplitAfter = false;
-            }
-
-            switch(c){
-                case '(':
-                case ')':
-                case '[':
-                case ']':
-                case '{':
-                case '}':
-                case '\'':
-                case ',':
-                case ';':
-                case '!':
-                    PRINT_LAST_TYPE();
-                    word[wordlen++] = c;
-                    isSplitAfter = true;
-                    break;
-
-                case '\"':
-                    PRINT_LAST_TYPE();
-                    word[wordlen++] = c;
-                    isStringMode = !isStringMode;
-                    break;
-
-                case ':':
-                case '<':
-                case '-':
-                case '+':
-                case '&':
-                case '.':
-                    if (wordlen == 0){
-                        PRINT_LAST_TYPE();
-                    }
-                    else if (wordlen == 1 && word[0] != c) {
-                        PRINT_LAST_TYPE();
-                    }
-                    else {
-                        // do nothing
-                    }
-
-                    word[wordlen++] = c;
-                    break;
-
-                case '/':
-                    if (wordlen == 0){
-                        PRINT_LAST_TYPE();
-                    }
-                    else if (wordlen == 1 && word[0] != c) {
-                        if (word[0] == '*') {
-                            // do nothing
-                        }
-                        else{
-                            PRINT_LAST_TYPE();
-                        }
-                    }
-                    else {
-                        // do nothing
-                    }
-
-                    word[wordlen++] = c;
-                    break;
-
-                case '*':
-                    if (wordlen == 0){
-                        PRINT_LAST_TYPE();
-                    }
-                    else if (wordlen == 1 && word[0] != c) {
-                        if (word[0] == '/') {
-                            // do nothing
-                        }
-                        else{
-                            PRINT_LAST_TYPE();
-                        }
-                    }
-                    else {
-                        // do nothing
-                    }
-
-                    word[wordlen++] = c;
-                    break;
-
-                case '=':
-                    if (wordlen == 0){
-                        PRINT_LAST_TYPE();
-                    }
-                    else if (wordlen == 1 && word[0] != c) {
-                        if (word[0] == '+' || word[0] == '-' || word[0] == '*' || word[0] == '/' ||
-                            word[0] == '%' || word[0] == '&' || word[0] == '|' || word[0] == '!') {
-                            // do nothing
-                        }
-                        else{
-                            PRINT_LAST_TYPE();
-                        }
-                    }
-                    else {
-                        // do nothing
-                    }
-
-                    word[wordlen++] = c;
-                    break;
-
-                case '\\':
-                    PRINT_LAST_TYPE();
-                    word[wordlen++] = c;
-                    if (isStringMode)
-                        isEscapeChar = true;
-                    break;
-
-                default:
-                    word[wordlen++] = c;
-                    break;
+            if (c == '\\') {
+                isEscapeChar = true;
             }
         }
     }

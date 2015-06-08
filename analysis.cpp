@@ -7,55 +7,72 @@
 
 void getIncludeFiles(Meta_Vector & wordVector, size_t index)
 {
-	int curLine = wordVector[index].line;
-	int headerType = TYPE_SYSTEM;
-	char headerStr[256] = {'\0'};
+    int curLine = wordVector[index].line;
+    int headerType = TYPE_SYSTEM;
+    char headerStr[256] = {'\0'};
+    int  headerStrLen = 0;
 
-	// #include <string.h> or #include <vector>
-	if (index + 5 >= wordVector.size() || wordVector[index+5].line != curLine){
-		printf("not a full header include statement [%d, %d].\n", (int)index, (int)wordVector.size());
-		return ;
-	}
+    // #include <string.h> or #include <vector>
+    if (index + 5 >= wordVector.size() || wordVector[index+5].line != curLine){
+        printf("not a full header include statement [%d, %d].\n", (int)index, (int)wordVector.size());
+        return ;
+    }
 
-	if (wordVector[index+3].data[0] == '\"'){
-		headerType = TYPE_USER;
-	}
-	else if (wordVector[index+3].data[0] == '<'){
-		headerType = TYPE_SYSTEM;
-	}
-	else{
-		printf("not a valid header include statement [%s].\n", wordVector[index+3].data);
-		return;
-	}
+    if (wordVector[index+3].data.chr[0] == '\"'){
+        headerType = TYPE_USER;
+    }
+    else if (wordVector[index+3].data.chr[0] == '<'){
+        headerType = TYPE_SYSTEM;
+    }
+    else{
+        printf("Line %d is not a valid header include statement.\n", curLine);
+        return;
+    }
 
-	// skip '#', "include", space and header type char '"' or '<'
+    bool isLineComment = false;
+
+    // skip '#', "include", space and header type char '"' or '<'
     for(size_t i=index+4; i < wordVector.size(); i++)
     {
-    	if (wordVector[i].line != wordVector[index].line)
-    		break;
+        Meta_Struct meta = wordVector[i];
+        if (meta.line != curLine)
+            break;
 
-    	if (strncmp(wordVector[i].data, "//", 2) == 0){
-    		printf("comment occurs at pos %d\n", wordVector[i].pos);
-    		break;
-    	}
+        if (isLineComment) {
+            isLineComment = false;
+            if (meta.data.chr[0] == '/'){
+                // printf("comment occurs at pos %d\n", meta.pos);
+                headerStrLen--;
+                headerStr[headerStrLen] = '\0';
+                break;
+            }
+        }
 
-    	if (headerType == TYPE_SYSTEM && wordVector[i].data[0] == '>'){
-    		printf("Line %d is a system header include: %s\n", curLine, headerStr);
-    		break;
-    	}
-    	else if (headerType == TYPE_USER && wordVector[i].data[0] == '\"'){
-    		printf("Line %d is a user   header include: %s\n", curLine, headerStr);
-    		break;
-    	}
-    	else if (wordVector[i].type == TYPE_WORD ||
-    		strcmp(wordVector[i].data, "/") == 0 ||
-    		strcmp(wordVector[i].data, ".") == 0){
-    		strcat(headerStr, wordVector[i].data);
-    	}
-    	else{
-			printf("not a valid header include statement [%s].\n", wordVector[i].data);
-			break;
-    	}
+        if (meta.data.chr[0] == '/'){
+            isLineComment = true;
+        }
+
+        if (headerType == TYPE_SYSTEM && meta.data.chr[0] == '>'){
+            printf("Line %d is a system header include: %s\n", curLine, headerStr);
+            break;
+        }
+        else if (headerType == TYPE_USER && meta.data.chr[0] == '\"'){
+            printf("Line %d is a user   header include: %s\n", curLine, headerStr);
+            break;
+        }
+        else if (meta.type == TYPE_WORD){
+            strcat(headerStr, wordVector[i].data.str);
+            headerStrLen += meta.len;
+        }
+        else if (meta.type == TYPE_SPECIAL &&
+            (meta.data.chr[0] == '/' || meta.data.chr[0] == '.') ) {
+            strcat(headerStr, wordVector[i].data.chr);
+            headerStrLen += meta.len;
+        }
+        else{
+            printf("Line %d is not a valid header include statement.\n", curLine);
+            break;
+        }
     }
 }
 
@@ -67,28 +84,28 @@ void getDefine(Meta_Vector & wordVector, size_t index)
 
     // #define A
     if (index + 3 >= wordVector.size() || wordVector[index+3].line != curLine){
-        printf("not a full define statement [%d, %d].\n", (int)index, (int)wordVector.size());
+        printf("Line %d is not a full define statement.\n", curLine);
         return ;
     }
 
     if (wordVector[index+4].line != curLine) {
-        if (wordVector[index+3].type == TYPE_WORD){
-            printf("Line %d is a NULL constant define: %s\n", curLine, wordVector[index+3].data);
-            return ;
-        }
+        if (wordVector[index+3].type == TYPE_WORD)
+            printf("Line %d is a NULL constant define: %s\n", curLine,
+                    wordVector[index+3].data.str);
         else
-            printf("not a valid define statement [%s].\n", wordVector[index+2].data);
+            printf("Line %d is not a valid NULL constant define statement\n", curLine);
+
+        return ;
     }
     else{
-        if (wordVector[index+4].data[0] == '('){
+        if (wordVector[index+4].data.chr[0] == '('){
             defineType = TYPE_FUNCTION;
         }
-        else if (wordVector[index+4].type == TYPE_SPACE &&
-                 wordVector[index+5].type == TYPE_WORD){
+        else if (wordVector[index+4].type == TYPE_SPACE){
             defineType = TYPE_CONSTANT;
         }
         else{
-            printf("not a valid define statement [%s].\n", wordVector[index+3].data);
+            printf("Line %d is not a valid define statement\n", curLine);
             return;
         }
     }
@@ -96,19 +113,30 @@ void getDefine(Meta_Vector & wordVector, size_t index)
     if (defineType == TYPE_CONSTANT){
         int defineStrLen = 0;
         bool addSpace = false;
+        bool isLineComment = false;
 
         // skip '#', "define", space, constant define and space
         for(size_t i=index+5; i < wordVector.size(); i++)
         {
-            if (wordVector[i].line != wordVector[index].line)
+            Meta_Struct meta = wordVector[i];
+            if (meta.line != curLine)
                 break;
 
-            if (strncmp(wordVector[i].data, "//", 2) == 0){
-                printf("comment occurs at pos %d\n", wordVector[i].pos);
-                break;
+            if (isLineComment) {
+                isLineComment = false;
+                if (meta.data.chr[0] == '/'){
+                    // printf("comment occurs at pos %d\n", meta.pos);
+                    defineStrLen--;
+                    defineStr[defineStrLen] = '\0';
+                    break;
+                }
             }
 
-            if (wordVector[i].type == TYPE_SPACE){
+            if (meta.data.chr[0] == '/'){
+                isLineComment = true;
+            }
+
+            if (meta.type == TYPE_SPACE){
                 if (addSpace == false) {
                     addSpace = true;
                 }
@@ -116,20 +144,28 @@ void getDefine(Meta_Vector & wordVector, size_t index)
             else{
                 if (addSpace == true) {
                     addSpace = false;
-                    strcat(defineStr, wordVector[i-1].data);
+                    strcat(defineStr, wordVector[i-1].data.str);
                     defineStrLen += wordVector[i-1].len;
                 }
 
-                strcat(defineStr, wordVector[i].data);
-                defineStrLen += wordVector[i].len;
+                if (meta.type == TYPE_WORD)
+                    strcat(defineStr, meta.data.str);
+                else
+                    strcat(defineStr, meta.data.chr);
+                defineStrLen += meta.len;
             }
         }
 
-        printf("Line %d is a constant define: %s, value is %s, len is %d\n", curLine,
-            wordVector[index+3].data, defineStr, defineStrLen);
+        if (defineStrLen == 0)
+            printf("Line %d is a NULL constant define: %s\n", curLine,
+                wordVector[index+3].data.str);
+        else
+            printf("Line %d is a constant define: %s, value is %s, len is %d\n", curLine,
+                wordVector[index+3].data.str, defineStr, defineStrLen);
+
     }
     else{
-        printf("Line %d is a function define: %s\n", curLine, wordVector[index+3].data);
+        printf("Line %d is a function define: %s\n", curLine, wordVector[index+3].data.str);
     }
 }
 
@@ -148,26 +184,26 @@ void analysis(Meta_Vector & wordVector)
 
         if (newLineFlag)
         {
-            if (wordVector[i].data[0] == '#' && i < vectorSize-1){
-                if (strcmp(wordVector[i+1].data, "include") == 0) {
+            if (wordVector[i].data.chr[0] == '#' && i < vectorSize-1){
+                if (strcmp(wordVector[i+1].data.str, "include") == 0) {
                     getIncludeFiles(wordVector, i);
                 }
-                else if (strcmp(wordVector[i+1].data, "define") == 0) {
+                else if (strcmp(wordVector[i+1].data.str, "define") == 0) {
                     getDefine(wordVector, i);
                 }
-                else if (strcmp(wordVector[i+1].data, "if") == 0) {
+                else if (strcmp(wordVector[i+1].data.str, "if") == 0) {
                     printf("Line %d is a if compile condition.\n", wordVector[i].line);
                 }
-                else if (strcmp(wordVector[i+1].data, "ifdef") == 0) {
+                else if (strcmp(wordVector[i+1].data.str, "ifdef") == 0) {
                     printf("Line %d is a ifdef compile condition.\n", wordVector[i].line);
                 }
-                else if (strcmp(wordVector[i+1].data, "ifndef") == 0) {
+                else if (strcmp(wordVector[i+1].data.str, "ifndef") == 0) {
                     printf("Line %d is a ifndef compile condition.\n", wordVector[i].line);
                 }
-                else if (strcmp(wordVector[i+1].data, "else") == 0) {
+                else if (strcmp(wordVector[i+1].data.str, "else") == 0) {
                     printf("Line %d is a else compile condition.\n", wordVector[i].line);
                 }
-                else if (strcmp(wordVector[i+1].data, "endif") == 0) {
+                else if (strcmp(wordVector[i+1].data.str, "endif") == 0) {
                     printf("Line %d is a endif compile condition.\n", wordVector[i].line);
                 }
                 else {
