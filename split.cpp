@@ -41,7 +41,7 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
     for (i = 0; i < datalen; i++){
         char c = data[i];
 
-        if (isEscapeChar){
+        if (isEscapeChar && !isspace(c)){
             isEscapeChar = false;
             word[0] = c;
             PRINT_LAST_TYPE();

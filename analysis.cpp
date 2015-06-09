@@ -103,7 +103,7 @@ void getIncludeFiles(Meta_Vector & wordVector, size_t index)
     }
 }
 
-void getDefine(Meta_Vector & wordVector, size_t index)
+void getDefine(Meta_Vector & wordVector, size_t index, bool & needNextLine)
 {
     int curLine = wordVector[index].line;
     int defineType = TYPE_CONSTANT;
@@ -198,6 +198,8 @@ void getDefine(Meta_Vector & wordVector, size_t index)
     }
     else{
         printf("Line %d is a function define: %s\n", curLine, wordVector[index+3].data.str);
+        restoreLine(wordVector, index, defineStr);
+        printf("%s\n", defineStr);
     }
 }
 
@@ -206,6 +208,7 @@ void analysis(Meta_Vector & wordVector)
     int curLine = 0;
     bool newLineFlag = true;
     size_t vectorSize = wordVector.size();
+    bool needNextLine = false;
 
     for(size_t i=0; i < vectorSize; i++)
     {
@@ -221,7 +224,7 @@ void analysis(Meta_Vector & wordVector)
                     getIncludeFiles(wordVector, i);
                 }
                 else if (strcmp(wordVector[i+1].data.str, "define") == 0) {
-                    getDefine(wordVector, i);
+                    getDefine(wordVector, i, needNextLine);
                 }
                 else if (strcmp(wordVector[i+1].data.str, "if") == 0) {
                     printf("Line %d is a if compile condition.\n", wordVector[i].line);
