@@ -20,6 +20,7 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
     int len = 0;
     int type = TYPE_SPACE;
     bool isEscapeChar = false;
+    bool isSplitAfter = false;
 
 #define PRINT_LAST_TYPE() \
     if (len > 0) { \
@@ -41,18 +42,20 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
     for (i = 0; i < datalen; i++){
         char c = data[i];
 
-        if (isEscapeChar && !isspace(c)){
-            isEscapeChar = false;
-            word[0] = c;
-            PRINT_LAST_TYPE();
-            continue;
-        }
-
         if (isalnum(c) || c == '_'){
+            if (isSplitAfter){
+                isSplitAfter = false;
+                PRINT_LAST_TYPE();
+            }
+
+            if (isEscapeChar){
+                isEscapeChar = false;
+                isSplitAfter = true;
+            }
+
             CHECK_LAST_TYPE(TYPE_WORD);
             word[len++] = c;
         }
-        
         else if (isspace(c)){
             CHECK_LAST_TYPE(TYPE_SPACE);
             if (c == ' ' || c == '\t')
@@ -66,7 +69,12 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
             word[len++] = c;
 
             if (c == '\\') {
-                isEscapeChar = true;
+                isEscapeChar = !isEscapeChar;
+            }
+            else{
+                if (isEscapeChar){
+                    isEscapeChar = false;
+                }
             }
         }
     }
