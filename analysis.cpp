@@ -26,6 +26,76 @@ int restoreLine(Meta_Vector & wordVector, size_t index, char * line) {
     return 0;
 }
 
+int handleSlash(Meta_Vector & wordVector, size_t index, bool & nextline, char & escapeChar) {
+    int curLine = wordVector[index].line;
+    Meta_Struct meta = wordVector[index+1];
+
+    if (meta.line != curLine) {
+        printf("it's a nextline flag.\n");
+        nextline = true;
+        return 0;
+    }
+    else if (meta.type == TYPE_SPACE) {
+        if (wordVector[index+2].line != curLine) {
+            printf("it's a nextline flag.\n");
+            nextline = true;
+            return 1;
+        }
+        else {
+            printf("error with next char(%c) after slash.\n", meta.data.str[0]);
+            return -1;
+        }
+    }
+    else {
+        char c = '\0';
+        if (meta.type == TYPE_SPECIAL)
+            c = meta.data.chr[0];
+        else
+            c = meta.data.str[0];
+        printf("is a escape  char \\%c\n", c);
+
+        switch(c){
+            case 'a':
+                escapeChar = '\a';
+                break;
+            case 'b':
+                escapeChar = '\b';
+                break;
+            case 'f':
+                escapeChar = '\f';
+                break;
+            case 'n':
+                escapeChar = '\n';
+                break;
+            case 'r':
+                escapeChar = '\r';
+                break;
+            case 't':
+                escapeChar = '\t';
+                break;
+            case 'v':
+                escapeChar = '\v';
+                break;
+            case '\\':
+                escapeChar = '\\';
+                break;
+            case '\'':
+                escapeChar = '\'';
+                break;
+            case '\"':
+                escapeChar = '\"';
+                break;
+            case '\0':
+                escapeChar = '\0';
+                break;
+            default:
+                printf("error with next char(%c) after slash.\n", c);
+                return -1;
+        }
+        return 0;
+    }
+}
+
 void getIncludeFiles(Meta_Vector & wordVector, size_t index)
 {
     int curLine = wordVector[index].line;
@@ -161,6 +231,17 @@ void getDefine(Meta_Vector & wordVector, size_t index, bool & needNextLine)
                     defineStrLen--;
                     defineStr[defineStrLen] = '\0';
                     break;
+                }
+            }
+
+            if (meta.data.chr[0] == '\\'){
+                if (wordVector[i-1].type == TYPE_SPECIAL && wordVector[i-1].data.chr[0] == '\\'){
+                    // printf("it's already escaped with this slash.\n");
+                }
+                else {
+                    bool nextline = false;
+                    char escapeChar = '\0';
+                    handleSlash(wordVector, i, nextline, escapeChar);
                 }
             }
 
