@@ -173,11 +173,13 @@ void getIncludeFiles(Meta_Vector & wordVector, size_t index)
     }
 }
 
-void getDefine(Meta_Vector & wordVector, size_t index, bool & needNextLine)
+void getDefine(Meta_Vector & wordVector, size_t index)
 {
     int curLine = wordVector[index].line;
     int defineType = TYPE_CONSTANT;
-    char defineStr[256] = {'\0'};
+    char defineStr[1024] = {'\0'};
+    int defineStrLen = 0;
+    bool addSpace = false;
 
     // #define A
     if (index + 3 >= wordVector.size() || wordVector[index+3].line != curLine){
@@ -213,8 +215,6 @@ void getDefine(Meta_Vector & wordVector, size_t index, bool & needNextLine)
     }
 
     if (defineType == TYPE_CONSTANT){
-        int defineStrLen = 0;
-        bool addSpace = false;
         bool isLineComment = false;
 
         // skip '#', "define", space, constant define and space
@@ -278,9 +278,48 @@ void getDefine(Meta_Vector & wordVector, size_t index, bool & needNextLine)
 
     }
     else{
-        printf("Line %d is a function define: %s\n", curLine, wordVector[index+3].data.str);
-        restoreLine(wordVector, index, defineStr);
-        printf("%s\n", defineStr);
+        // restoreLine(wordVector, index, defineStr);
+        // printf("%s\n", defineStr);
+        bool needNextLine = false;
+
+        // skip '#', "define", space, function define and ()
+        for(size_t i=index+3; i < wordVector.size(); i++) {
+            Meta_Struct meta = wordVector[i];
+            if (meta.line != curLine){
+                if (needNextLine){
+                    curLine = meta.line;
+                    needNextLine = false;
+                }
+                else
+                    break;
+            }
+
+            if (meta.type == TYPE_SPACE){
+                if (addSpace == false) {
+                    addSpace = true;
+                }
+            }
+            else{
+                if (addSpace == true) {
+                    addSpace = false;
+                    strcat(defineStr, wordVector[i-1].data.str);
+                    defineStrLen += wordVector[i-1].len;
+                }
+
+                if (meta.type == TYPE_WORD)
+                    strcat(defineStr, meta.data.str);
+                else{
+                    if (meta.data.chr[0] == '\\'){
+                        strcat(defineStr, "\n");
+                        needNextLine = true;
+                    }
+                    else
+                        strcat(defineStr, meta.data.chr);
+                }
+                defineStrLen += meta.len;
+            }
+        }
+        printf("Line %d is a function define:\n%s\n", curLine, defineStr);
     }
 }
 
@@ -289,7 +328,6 @@ void analysis(Meta_Vector & wordVector)
     int curLine = 0;
     bool newLineFlag = true;
     size_t vectorSize = wordVector.size();
-    bool needNextLine = false;
 
     for(size_t i=0; i < vectorSize; i++)
     {
@@ -305,7 +343,7 @@ void analysis(Meta_Vector & wordVector)
                     getIncludeFiles(wordVector, i);
                 }
                 else if (strcmp(wordVector[i+1].data.str, "define") == 0) {
-                    getDefine(wordVector, i, needNextLine);
+                    getDefine(wordVector, i);
                 }
                 else if (strcmp(wordVector[i+1].data.str, "if") == 0) {
                     printf("Line %d is a if compile condition.\n", wordVector[i].line);
