@@ -81,3 +81,16 @@ void split(const char * data, int datalen, int line, Meta_Vector & wordVector)
 
     PRINT_LAST_TYPE();
 }
+
+const char * getTypeName(int type) {
+    switch (type) {
+        case TYPE_SPACE:
+            return "space";
+        case TYPE_WORD:
+            return "word";
+        case TYPE_SPECIAL:
+            return "special";
+        default:
+            return "error type";
+    }
+}

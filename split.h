@@ -58,4 +58,6 @@ typedef vector<Meta_Struct> Meta_Vector;
 
 void split(const char * data, int datalen, int line, Meta_Vector & wordVector);
 
+const char * getTypeName(int type);
+
 #endif // _SPLIT_H_
