@@ -26,7 +26,53 @@ int restoreLine(Meta_Vector & wordVector, size_t index, char * line) {
     return 0;
 }
 
-int handleSlash(Meta_Vector & wordVector, size_t index, bool & nextline, char & escapeChar) {
+int handleSlash(Meta_Vector & wordVector, size_t index, int & commentType) {
+    int curLine = wordVector[index].line;
+    Meta_Struct meta = wordVector[index+1];
+    size_t i;
+
+    if (meta.line != curLine) {
+        printf("nothing but next line after '/'\n");
+        return 0;
+    }
+
+    if (meta.type != TYPE_SPECIAL) {
+        printf("space or word after '/'\n");
+        return 0;
+    }
+
+    char nextChr = meta.data.chr[0];
+    if (nextChr == '/') {
+        commentType = TYPE_SIGLELINE;
+        printf("TYPE_SIGLELINE\n");
+
+        for(i=index+1; i < wordVector.size(); i++) {
+            if (wordVector[i].line != curLine)
+                break;
+        }
+        printf("start at %d, end at %d\n", index, i);
+        return (int)(i - index);
+    }
+    else if (nextChr == '*') {
+        commentType = TYPE_MULTILINE;
+        printf("TYPE_MULTILINE\n");
+
+        for(i=index+1; i < wordVector.size(); i++) {
+            if (wordVector[i].type == TYPE_SPECIAL && wordVector[i].data.chr[0] == '/' &&
+                wordVector[i-1].type == TYPE_SPECIAL && wordVector[i-1].data.chr[0] == '*')
+                break;
+        }
+        printf("start at %d, end at %d\n", index, i);
+        return (int)(i - index);
+    }
+    else {
+        printf("after '/' is %c\n", nextChr);
+        return 0;
+    }
+}
+
+
+int handleBackSlash(Meta_Vector & wordVector, size_t index, bool & nextline, char & escapeChar) {
     int curLine = wordVector[index].line;
     Meta_Struct meta = wordVector[index+1];
 
@@ -173,8 +219,46 @@ void getIncludeFiles(Meta_Vector & wordVector, size_t index)
     }
 }
 
-void getDefine(Meta_Vector & wordVector, size_t index)
+int handlDefine(Meta_Vector & wordVector, size_t index)
 {
+    int step = CHECK_SPACE;
+
+    for(size_t i=index+2; i < wordVector.size(); i++) {
+        Meta_Struct meta = wordVector[i];
+
+        if (meta.type == TYPE_SPECIAL && meta.data.chr[0] == '/') {
+            int commentType;
+            int ret = handleSlash(wordVector, i, commentType);
+            if (ret > 0) {
+                if (wordVector[i-1].line == meta.line && wordVector[i-1].type == TYPE_SPACE &&
+                    wordVector[i+ret+1].line == meta.line && wordVector[i+ret+1].type == TYPE_SPACE)
+                    ret++;
+                i += ret;
+                printf("skip %d after comment\n", ret);
+                continue;
+            }
+        }
+
+#define CHECK_TYPE(_type) \
+        if (meta.type != _type) { \
+            printf("[%d]expect type %s after \"#define\", but actually type is %d(%s)\n", \
+                meta.pos, getTypeName(_type), meta.type, getTypeName(meta.type)); \
+            return -DEFINE_FMT_ERROR; \
+        }
+
+        switch (step) {
+            case CHECK_SPACE:
+                CHECK_TYPE(TYPE_SPACE);
+                step = CHECK_WORD;
+                break;
+            case CHECK_WORD:
+                CHECK_TYPE(TYPE_WORD);
+                step = CHECK_NONE;
+                break;
+        }
+    }
+    return 0;
+
     int curLine = wordVector[index].line;
     int defineType = TYPE_CONSTANT;
     char defineStr[1024] = {'\0'};
@@ -185,7 +269,7 @@ void getDefine(Meta_Vector & wordVector, size_t index)
     if (index + 3 >= wordVector.size() || wordVector[index+3].line != curLine){
         restoreLine(wordVector, index, defineStr);
         printf("Line %d is not a full define statement:%s\n", curLine, defineStr);
-        return ;
+        return 0;
     }
 
     if (wordVector[index+4].line != curLine) {
@@ -198,7 +282,7 @@ void getDefine(Meta_Vector & wordVector, size_t index)
                 curLine, defineStr);
         }
 
-        return ;
+        return 0;
     }
     else{
         if (wordVector[index+4].data.chr[0] == '('){
@@ -210,7 +294,7 @@ void getDefine(Meta_Vector & wordVector, size_t index)
         else{
             restoreLine(wordVector, index, defineStr);
             printf("Line %d is not a valid define statement:%s\n", curLine, defineStr);
-            return;
+            return 0;
         }
     }
 
@@ -241,7 +325,7 @@ void getDefine(Meta_Vector & wordVector, size_t index)
                 else {
                     bool nextline = false;
                     char escapeChar = '\0';
-                    handleSlash(wordVector, i, nextline, escapeChar);
+                    handleBackSlash(wordVector, i, nextline, escapeChar);
                 }
             }
 
@@ -321,6 +405,8 @@ void getDefine(Meta_Vector & wordVector, size_t index)
         }
         printf("Line %d is a function define:\n%s\n", curLine, defineStr);
     }
+
+    return 0;
 }
 
 void analysis(Meta_Vector & wordVector)
@@ -343,7 +429,7 @@ void analysis(Meta_Vector & wordVector)
                     getIncludeFiles(wordVector, i);
                 }
                 else if (strcmp(wordVector[i+1].data.str, "define") == 0) {
-                    getDefine(wordVector, i);
+                    handlDefine(wordVector, i);
                 }
                 else if (strcmp(wordVector[i+1].data.str, "if") == 0) {
                     printf("Line %d is a if compile condition.\n", wordVector[i].line);

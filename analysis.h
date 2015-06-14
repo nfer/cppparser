@@ -9,9 +9,26 @@ enum Header_Type{
     TYPE_USER,
 };
 
+enum Comment_Type{
+    TYPE_SIGLELINE,
+    TYPE_MULTILINE,
+};
+
 enum Define_Type{
     TYPE_CONSTANT,
     TYPE_FUNCTION,
+};
+
+enum Analysis_Error{
+	ANALYSIS_OK = 0,
+
+    DEFINE_FMT_ERROR = 0x1000,
+};
+
+enum Analysis_Step{
+    CHECK_SPACE,
+    CHECK_WORD,
+    CHECK_NONE,
 };
 
 void getIncludeFiles(Meta_Vector & wordVector, size_t index);
