@@ -44,25 +44,25 @@ int handleSlash(Meta_Vector & wordVector, size_t index, int & commentType) {
     char nextChr = meta.data.chr[0];
     if (nextChr == '/') {
         commentType = TYPE_SIGLELINE;
-        printf("TYPE_SIGLELINE\n");
 
         for(i=index+1; i < wordVector.size(); i++) {
             if (wordVector[i].line != curLine)
                 break;
         }
-        printf("start at %d, end at %d\n", index, i);
+
+        printf("TYPE_SIGLELINE start at %d, end at %d\n", index, i);
         return (int)(i - index);
     }
     else if (nextChr == '*') {
         commentType = TYPE_MULTILINE;
-        printf("TYPE_MULTILINE\n");
 
         for(i=index+1; i < wordVector.size(); i++) {
             if (wordVector[i].type == TYPE_SPECIAL && wordVector[i].data.chr[0] == '/' &&
                 wordVector[i-1].type == TYPE_SPECIAL && wordVector[i-1].data.chr[0] == '*')
                 break;
         }
-        printf("start at %d, end at %d\n", index, i);
+
+        printf("TYPE_MULTILINE start at %d, end at %d\n", index, i);
         return (int)(i - index);
     }
     else {
@@ -222,9 +222,12 @@ void getIncludeFiles(Meta_Vector & wordVector, size_t index)
 int handlDefine(Meta_Vector & wordVector, size_t index)
 {
     int step = CHECK_SPACE;
+    int curLine = wordVector[index].line;
 
     for(size_t i=index+2; i < wordVector.size(); i++) {
         Meta_Struct meta = wordVector[i];
+        if (meta.line != curLine)
+                break;
 
         if (meta.type == TYPE_SPECIAL && meta.data.chr[0] == '/') {
             int commentType;
@@ -234,7 +237,7 @@ int handlDefine(Meta_Vector & wordVector, size_t index)
                     wordVector[i+ret+1].line == meta.line && wordVector[i+ret+1].type == TYPE_SPACE)
                     ret++;
                 i += ret;
-                printf("skip %d after comment\n", ret);
+                // printf("skip %d after comment\n", ret);
                 continue;
             }
         }
@@ -253,13 +256,13 @@ int handlDefine(Meta_Vector & wordVector, size_t index)
                 break;
             case CHECK_WORD:
                 CHECK_TYPE(TYPE_WORD);
+                printf("define name is: %s\n", meta.data.str);
                 step = CHECK_NONE;
                 break;
         }
     }
     return 0;
 
-    int curLine = wordVector[index].line;
     int defineType = TYPE_CONSTANT;
     char defineStr[1024] = {'\0'};
     int defineStrLen = 0;
