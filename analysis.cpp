@@ -223,6 +223,7 @@ int handlDefine(Meta_Vector & wordVector, size_t index)
 {
     int step = CHECK_SPACE;
     int curLine = wordVector[index].line;
+    int defineType;
 
     for(size_t i=index+2; i < wordVector.size(); i++) {
         Meta_Struct meta = wordVector[i];
@@ -257,13 +258,27 @@ int handlDefine(Meta_Vector & wordVector, size_t index)
             case CHECK_WORD:
                 CHECK_TYPE(TYPE_WORD);
                 printf("define name is: %s\n", meta.data.str);
+                step = CHECK_TYPE;
+                break;
+            case CHECK_TYPE:
+                if (meta.type == TYPE_SPACE) {
+                    printf("define type is constant\n");
+                    defineType = TYPE_CONSTANT;
+                }
+                else if (meta.type == TYPE_SPECIAL && meta.data.chr[0] == '(') {
+                    printf("define type is function\n");
+                    defineType = TYPE_FUNCTION;
+                }
+                else {
+                    printf("define type error\n");
+                    return -1;
+                }
                 step = CHECK_NONE;
                 break;
         }
     }
     return 0;
 
-    int defineType = TYPE_CONSTANT;
     char defineStr[1024] = {'\0'};
     int defineStrLen = 0;
     bool addSpace = false;

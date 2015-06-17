@@ -28,6 +28,8 @@ enum Analysis_Error{
 enum Analysis_Step{
     CHECK_SPACE,
     CHECK_WORD,
+    CHECK_TYPE,
+
     CHECK_NONE,
 };
 
